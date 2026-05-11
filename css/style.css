@@ -271,3 +271,8 @@ body {
     color: #94a3af; /* สีเทาอ่อนๆ */
     font-size: 0.95rem;
 }
+/* ถ้ายังไม่มี fadeIn ในไฟล์เดิม ให้เพิ่มตัวนี้ไปด้วยครับ */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
