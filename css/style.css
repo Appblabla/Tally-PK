@@ -73,3 +73,27 @@ th { text-align: left; color: #9ca3af; padding: 10px; border-bottom: 1px solid #
 td { padding: 12px 10px; border-bottom: 1px solid #f9fafb; }
 .badge-w { color: #ef4444; font-weight: bold; }
 .badge-r { color: #10b981; font-weight: bold; }
+/* เพิ่มเติมจากของเดิม */
+.khit-symbol {
+    color: #4f46e5;
+    font-weight: bold;
+    margin-left: 10px;
+    letter-spacing: 2px;
+}
+
+.user-badge {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.text-red { color: #ef4444; font-weight: bold; }
+.text-green { color: #10b981; font-weight: bold; }
+
+.individual-summary {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
