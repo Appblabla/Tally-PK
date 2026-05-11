@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tally-PK</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=12.0">
+    <link rel="stylesheet" href="css/style.css?v=15.0">
 </head>
 <body>
 
@@ -22,12 +22,12 @@
 
         <main class="content-area">
             <section id="tab-record" class="tab-content active">
-                <div class="input-card">
-                    <div class="form-group">
-                        <label class="label">ชื่อผู้ทำรายการ</label>
-                        <input type="text" id="userName" class="main-input" placeholder="ใส่ชื่อตรงนี้...">
-                    </div>
+                <div class="form-group">
+                    <label class="label">ชื่อผู้ทำรายการ</label>
+                    <input type="text" id="userName" class="main-input" placeholder="พิมพ์ชื่อเพื่อเริ่ม...">
+                </div>
 
+                <div id="interactive-area" style="display: none;">
                     <div class="action-toggle">
                         <button id="modeWithdraw" class="toggle-btn active" onclick="setMode('withdraw')">เบิกเงิน</button>
                         <button id="modeReturn" class="toggle-btn" onclick="setMode('return')">คืนเงิน</button>
@@ -43,22 +43,19 @@
                     </div>
 
                     <div id="return-section" style="display: none;">
-                        <div class="flex-input">
-                            <input type="number" id="returnAmount" class="main-input" placeholder="ยอดคืน...">
-                            <button class="btn-save" onclick="handleReturn()">บันทึกคืน</button>
+                        <div class="flex-input-group">
+                            <input type="number" id="returnAmount" class="main-input" placeholder="ระบุยอดเงินคืน...">
+                            <button class="btn-save-return" onclick="handleReturn()">บันทึก</button>
                         </div>
                     </div>
-                </div>
 
-                <div id="recent-history-area" style="display: none; margin-top: 25px;">
-                    <h3 class="section-title">รายการล่าสุด</h3>
-                    <div class="table-card">
-                        <table class="history-table">
-                            <thead>
-                                <tr><th>เวลา</th><th>ชื่อ</th><th>ยอด (฿)</th><th>ขีด</th></tr>
-                            </thead>
-                            <tbody id="historyBody"></tbody>
-                        </table>
+                    <div id="recent-history-area" style="display: none; margin-top: 30px;">
+                        <h3 class="section-title">รายการล่าสุดของคุณ</h3>
+                        <div class="table-card">
+                            <table class="history-table">
+                                <tbody id="historyBody"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -70,21 +67,21 @@
 
             <section id="tab-log" class="tab-content">
                 <div class="filter-bar">
-                    <input type="date" id="logDateFilter" onchange="renderLog()">
+                    <input type="date" id="logDateFilter" class="filter-input" onchange="renderLog()">
                 </div>
                 <div id="logList"></div>
-                <button class="btn-reset" onclick="nuclearReset()">ล้างข้อมูลถาวร</button>
+                <button class="btn-reset-danger" onclick="nuclearReset()">ล้างข้อมูลถาวร</button>
             </section>
         </main>
 
         <footer class="footer-summary" id="footer-total">
             <div class="footer-flex">
-                <p>ยอดรวมรอบนี้</p>
+                <p>ยอดกองกลาง</p>
                 <h2 id="grandTotal">0 ฿</h2>
             </div>
         </footer>
     </div>
 
-    <script type="module" src="js/script.js?v=12.0"></script>
+    <script type="module" src="js/script.js?v=15.0"></script>
 </body>
 </html>
