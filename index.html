@@ -2,15 +2,14 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Financial Tracker Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=4.7"> 
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=5.5"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-</head>
 </head>
 <body>
 
@@ -27,33 +26,47 @@
     <main class="content-area">
         <div id="tab-record" class="tab-content active">
             <div class="input-group">
-                <label class="label">👤 ชื่อผู้เบิก/คืน</label>
-                <input type="text" id="userName" class="main-input" placeholder="พิมพ์ชื่อเพื่อเริ่มบันทึก...">
+                <label class="label">👤 ชื่อผู้ใช้งานเครื่องนี้</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="text" id="userName" class="main-input" 
+                           placeholder="กรอกชื่อของคุณ..." 
+                           autocomplete="off" style="margin-bottom: 0; flex: 1;">
+                    <button id="btn-edit-name" onclick="enableNameEdit()" 
+                            style="border: none; background: #f1f5f9; border-radius: 12px; padding: 0 15px; height: 50px; color: #6366f1; cursor: pointer;">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                </div>
             </div>
-            <div class="action-toggle">
+
+            <div class="action-toggle" style="margin-top: 20px;">
                 <button id="modeWithdraw" class="toggle-btn active" onclick="setMode('withdraw')">เบิกเงิน</button>
                 <button id="modeReturn" class="toggle-btn" onclick="setMode('return')">คืนเงิน</button>
             </div>
+
             <div id="withdraw-section" class="button-section">
                 <button class="btn-submit btn-withdraw" onclick="saveEntry(200)">บันทึกเบิกเงิน <strong>200 ฿</strong></button>
             </div>
+
             <div id="return-section" class="button-section" style="display: none;">
                 <input type="number" id="returnAmount" class="main-input" placeholder="ระบุยอดเงินที่คืน" inputmode="numeric">
                 <button class="btn-submit btn-return" onclick="handleReturn()" style="margin-top:15px;">บันทึกคืนเงิน</button>
             </div>
+
             <div class="history-container">
-               <label class="label" style="padding-top: 20px;">🕒 ประวัติในรอบนี้</label>
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th>เวลา</th>
-                            <th>ชื่อ</th>
-                            <th>ยอด (฿)</th>
-                            <th>ขีด (|)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyBody"></tbody>
-                </table>
+                <label class="label" style="padding-top: 20px;">🕒 ประวัติในรอบนี้ (แสดงรุ่นมือถือที่กรอก)</label>
+                <div class="table-responsive">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>เวลา</th>
+                                <th>ชื่อ/เครื่อง</th>
+                                <th>ยอด (฿)</th>
+                                <th>ขีด</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -66,7 +79,7 @@
         <div id="tab-log" class="tab-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <label class="label" style="margin:0;">📜 ประวัติการจบยอด</label>
-                <button onclick="nuclearReset()" style="font-size: 10px; border:none; background:none; color:#cbd5e1; cursor:pointer;">ล้างข้อมูลเน่า</button>
+                <button onclick="nuclearReset()" style="font-size: 10px; border:none; background:none; color:#cbd5e1; cursor:pointer;">ล้างข้อมูล</button>
             </div>
             <div class="filter-area">
                 <input type="date" id="logDateFilter" class="form-control filter-input-modern" onchange="renderLog()">
@@ -77,11 +90,14 @@
     </main>
 
     <footer class="footer-summary">
-        <p>ยอดรวมกองกลาง (รอบปัจจุบัน)</p>
-        <h2 id="grandTotal">0 ฿</h2>
+        <div style="text-align: left;">
+            <p style="margin: 0; font-size: 0.8rem; opacity: 0.8;">ยอดรวมกองกลาง</p>
+            <h2 id="grandTotal" style="margin: 0;">0 ฿</h2>
+        </div>
+        <i class="fa-solid fa-wallet" style="font-size: 1.5rem; opacity: 0.3;"></i>
     </footer>
 </div>
 
-<script type="module" src="js/script.js?v=4.7"></script>
+<script type="module" src="js/script.js?v=5.5"></script>
 </body>
 </html>
