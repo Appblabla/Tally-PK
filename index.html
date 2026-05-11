@@ -3,26 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกขีด</title>
-    <link rel="stylesheet" href="css/style.css"> </head>
+    <title>ระบบบันทึกการเงิน</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
 <body>
     <div class="app-container">
         <header class="main-header">
-            <div class="header-left">
-                <h1>📊 ระบบบันทึกขีด</h1>
-                <span>อัตราส่วน: 200 ฿ = 1 ขีด</span>
-            </div>
+            <h1>💰 บันทึกการเบิก-คืน</h1>
         </header>
 
         <main class="content">
             <section class="section">
-                <label class="section-label">👤 เลือกผู้เบิก/คืน</label>
-                <div class="chip-group">
-                    <button class="chip active" onclick="selectUser('มด', this)">มด</button>
-                    <button class="chip" onclick="selectUser('Rex', this)">Rex</button>
-                    <button class="chip" onclick="selectUser('นิว', this)">นิว</button>
-                    <button class="chip btn-add-user">+</button>
-                </div>
+                <label class="section-label">👤 ชื่อผู้เบิก/คืน</label>
+                <input type="text" id="userName" class="main-input" placeholder="พิมพ์ชื่อตรงนี้...">
             </section>
 
             <div class="action-toggle">
@@ -32,56 +25,38 @@
 
             <div class="action-area">
                 <button id="btnQuickWithdraw" class="btn-main-action" onclick="saveData(200)">
-                    บันทึกเบิกเงิน <strong>+1 ขีด (200 ฿)</strong>
+                    บันทึกเบิกเงิน <strong>200 ฿</strong>
                 </button>
+
                 <div id="returnInputWrapper" class="input-wrapper" style="display: none;">
-                    <input type="number" id="returnAmount" placeholder="ระบุเงินที่คืน" inputmode="numeric">
-                    <button class="btn-save-return" onclick="handleReturnSave()">บันทึกคืนเงิน</button>
+                    <input type="number" id="returnAmount" class="main-input" placeholder="ระบุยอดเงินที่คืน" inputmode="numeric">
+                    <button class="btn-save-return" onclick="handleReturnSave()">บันทึกการคืน</button>
                 </div>
             </div>
 
-            <section class="individual-summary">
-                <label class="section-label">📋 ยอดคงเหลือรายคน</label>
-                <div class="user-cards">
-                    <div class="user-card">
-                        <span class="user-name">มด</span>
-                        <div class="user-total"><span id="val-มด">0</span> ขีด</div>
-                        <small id="baht-มด">0 ฿</small>
-                    </div>
-                    <div class="user-card">
-                        <span class="user-name">Rex</span>
-                        <div class="user-total"><span id="val-Rex">0</span> ขีด</div>
-                        <small id="baht-Rex">0 ฿</small>
-                    </div>
-                    <div class="user-card">
-                        <span class="user-name">นิว</span>
-                        <div class="user-total"><span id="val-นิว">0</span> ขีด</div>
-                        <small id="baht-นิว">0 ฿</small>
-                    </div>
-                </div>
-            </section>
-
             <div class="total-display">
-                <p>รวมยอดทั้งกอง</p>
-                <h2 id="totalUnit">0 ขีด</h2>
-                <span id="totalBaht">0 ฿</span>
+                <p>ยอดรวมทั้งหมดวันนี้</p>
+                <h2 id="totalBaht">0 ฿</h2>
             </div>
 
             <section class="history-section">
-                <h3 class="section-label">📜 ประวัติล่าสุด</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>เวลา</th>
-                            <th>ชื่อ</th>
-                            <th>ประเภท</th>
-                            <th>ขีด</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyBody"></tbody>
-                </table>
+                <h3 class="section-label">📋 ประวัติรายการ</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>เวลา</th>
+                                <th>ชื่อ</th>
+                                <th>ประเภท</th>
+                                <th>จำนวนเงิน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody"></tbody>
+                    </table>
+                </div>
             </section>
         </main>
     </div>
-    <script src="js/script.js"></script> </body>
+    <script src="js/script.js"></script>
+</body>
 </html>
