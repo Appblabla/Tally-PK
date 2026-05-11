@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// 🚩 Firebase Configuration
+// 🚩 Firebase Configuration (Tally-PK)
 const firebaseConfig = {
   apiKey: "AIzaSyCr9fXfx9m9cQ9_N_VhE3VTLbgdk3ZXRKM",
   authDomain: "tally-pk.firebaseapp.com",
@@ -20,9 +20,9 @@ let currentMode = 'withdraw';
 let transactions = [];
 let sessions = [];
 
-// --- 1. Real-time Listeners (คนอื่นกด เราเห็นทันที) ---
+// --- 1. Real-time Listeners (อัปเดตข้อมูลอัตโนมัติ) ---
 
-// ดึงข้อมูลรายการปัจจุบัน
+// ติดตามรายการปัจจุบัน
 onValue(ref(db, 'transactions'), (snapshot) => {
     const data = snapshot.val();
     transactions = data ? Object.values(data) : [];
@@ -30,14 +30,14 @@ onValue(ref(db, 'transactions'), (snapshot) => {
     renderSummary();
 });
 
-// ดึงข้อมูลประวัติรอบเก่า
+// ติดตามประวัติรอบเก่า
 onValue(ref(db, 'sessions'), (snapshot) => {
     const data = snapshot.val();
     sessions = data ? Object.values(data).reverse() : [];
     renderLog();
 });
 
-// --- 2. ฟังก์ชันการทำงาน (ใส่ window. เพื่อให้ HTML เรียกใช้ได้) ---
+// --- 2. ฟังก์ชันการทำงานหลัก ---
 
 window.setMode = (mode) => {
     currentMode = mode;
@@ -51,7 +51,12 @@ window.setMode = (mode) => {
 window.saveEntry = (amount) => {
     const nameInput = document.getElementById('userName');
     const name = nameInput.value.trim();
-    if (!name) return alert("กรุณาใส่ชื่อก่อนบันทึกครับ"), nameInput.focus();
+    
+    if (!name) {
+        alert("กรุณาใส่ชื่อก่อนบันทึกครับ");
+        nameInput.focus();
+        return;
+    }
 
     const newTx = {
         id: Date.now(),
@@ -61,16 +66,28 @@ window.saveEntry = (amount) => {
         amount: amount
     };
 
-    // บันทึกไปที่ Firebase
+    // ส่งข้อมูลไป Firebase
     push(ref(db, 'transactions'), newTx);
+
+    // ✅ บันทึกเสร็จแล้วเคลียร์ช่องชื่อ และเอา Cursor ไปรอไว้
+    nameInput.value = '';
+    nameInput.focus();
 };
 
 window.handleReturn = () => {
-    const input = document.getElementById('returnAmount');
-    const amt = parseInt(input.value);
-    if (!amt) return alert("ระบุยอดเงินด้วยครับ");
-    window.saveEntry(amt);
-    input.value = '';
+    const returnInput = document.getElementById('returnAmount');
+    const amt = parseInt(returnInput.value);
+    
+    if (!amt) {
+        alert("ระบุยอดเงินด้วยครับ");
+        returnInput.focus();
+        return;
+    }
+
+    window.saveEntry(amt); // บันทึกข้อมูล (ซึ่งจะเคลียร์ชื่อให้ด้วย)
+    
+    // ✅ เคลียร์ช่องยอดเงินคืน
+    returnInput.value = '';
 };
 
 function updateUI() {
@@ -119,7 +136,7 @@ function renderSummary() {
 
 window.endRound = () => {
     if (transactions.length === 0) return alert("ยังไม่มีรายการให้จบยอด");
-    if (!confirm("จบยอดรอบนี้และเริ่มรอบใหม่? ข้อมูลจะถูกย้ายไปที่หน้า 'ประวัติรอบ'")) return;
+    if (!confirm("จบยอดรอบนี้และเริ่มรอบใหม่?")) return;
 
     const summary = {};
     transactions.forEach(t => {
@@ -128,7 +145,6 @@ window.endRound = () => {
     });
 
     const total = transactions.reduce((s, t) => s + (t.type === 'withdraw' ? t.amount : -t.amount), 0);
-    
     const session = {
         id: Date.now(),
         date: new Date().toLocaleString('th-TH'),
@@ -136,10 +152,8 @@ window.endRound = () => {
         details: summary
     };
 
-    // เก็บเข้าประวัติและล้างรายการปัจจุบันบน Cloud
     push(ref(db, 'sessions'), session);
     remove(ref(db, 'transactions'));
-    
     location.hash = 'log';
 };
 
@@ -149,7 +163,7 @@ function renderLog() {
     
     const filterValue = document.getElementById('logDateFilter').value;
     if (sessions.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#94a3af; padding:40px;">ไม่มีประวัติรอบที่จบไปแล้ว</p>';
+        container.innerHTML = '<p style="text-align:center; color:#94a3af; padding:40px;">ไม่มีประวัติรอบ</p>';
         return;
     }
 
@@ -179,7 +193,7 @@ window.clearFilter = () => {
 };
 
 window.nuclearReset = () => {
-    if (confirm("⚠️ ล้างข้อมูลทั้งหมดบน Cloud? ข้อมูลของทุกคนจะหายถาวรนะครับ!")) {
+    if (confirm("⚠️ ล้างข้อมูลทั้งหมดถาวร?")) {
         remove(ref(db, '/'));
         location.reload();
     }
