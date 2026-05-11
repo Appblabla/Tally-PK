@@ -1,52 +1,47 @@
-/* 🎨 Tally-PK: Mobile App Web View Design */
+/* 🎨 Tally-PK: Minimal & Clean Design (No Rounded Corners) */
 :root {
-    --primary: #6C5CE7;       /* สีม่วงหลักแบบในรูป */
-    --primary-light: #F2F1FF;
+    --primary: #6C5CE7;       /* สีม่วงหลัก (ยังคงไว้ที่ Header ตามรูปที่ชอบ) */
     --withdraw: #ef4444;       /* สีแดงเบิก (-) */
     --return: #10b981;         /* สีเขียวคืน (+) */
-    --bg-frame: #1a1a1a;       /* สีพื้นหลังภายนอกตัวเว็บ (จำลอง Desktop) */
-    --bg-app: #ffffff;
-    --card-gray: #f8fafc;
-    --text-main: #2d3436;
-    --text-sub: #636e72;
-    --border: #dfe6e9;
-    --shadow: 0 10px 30px rgba(0,0,0,0.1);
+    --bg-body: #f8fafc;       /* พื้นหลังหน้าเว็บสีเทาอ่อนมาก */
+    --bg-app: #ffffff;        /* พื้นหลังตัวแอปสีขาว */
+    --text-main: #1e293b;
+    --text-sub: #64748b;
+    --border: #cbd5e1;        /* เส้นขอบชัดเจนขึ้น */
 }
 
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
+    border-radius: 0 !important; /* สั่งให้ทุกอย่าง "เหลี่ยม" ทั้งหมด */
 }
 
 body {
     font-family: 'Sarabun', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: var(--bg-frame); /* พื้นหลังด้านนอกดำเพื่อให้ดูเหมือน App */
+    background-color: var(--bg-body);
     color: var(--text-main);
     display: flex;
     justify-content: center;
-    align-items: center;
-    min-height: 100vh;
 }
 
-/* 📱 Container คุมความกว้างให้เหมือน App */
+/* 📱 Container แบบ Web View (ไม่มีกรอบดำแล้ว) */
 .app-container {
     width: 100%;
-    max-width: 450px;
-    height: 95vh;
-    background: white;
+    max-width: 500px; /* ขยายกว้างขึ้นนิดนึงให้ดูไม่อึดอัด */
+    min-height: 100vh;
+    background: var(--bg-app);
     display: flex;
     flex-direction: column;
-    border-radius: 30px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
 }
 
-/* 📍 Header - สีม่วงแบบรูปขวา */
+/* 📍 Header สีม่วง (คงความสดใสไว้ที่ส่วนบน) */
 .main-header {
     background: var(--primary);
-    padding: 30px 20px 20px;
+    padding: 25px 20px 15px;
     color: white;
     text-align: center;
     position: sticky;
@@ -55,111 +50,81 @@ body {
 }
 
 .main-header h1 {
-    font-size: 1.5rem;
-    margin: 0 0 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+    font-size: 1.3rem;
+    margin: 0 0 15px;
+    letter-spacing: 1px;
 }
 
-/* Tab Nav */
+/* Tab Navigation - แบบเหลี่ยม */
 .tab-nav {
     display: flex;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 5px;
-    border-radius: 50px;
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px;
 }
 
 .tab-item {
     flex: 1;
     border: none;
     padding: 12px;
-    border-radius: 50px;
     cursor: pointer;
     font-size: 0.9rem;
-    font-weight: 700;
-    color: #d3cffb;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.7);
     background: transparent;
-    transition: 0.3s;
 }
 
 .tab-item.active {
     background: white;
     color: var(--primary);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 /* 📝 Content Area */
 .content-area {
-    padding: 25px 20px 120px;
+    padding: 20px;
     flex: 1;
-    overflow-y: auto; /* เลื่อนดูประวัติได้ภายใน App */
 }
 
 .tab-content {
     display: none;
-    animation: fadeIn 0.3s ease;
 }
 
 .tab-content.active {
     display: block;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* ⌨️ Form Elements - ปรับสีม่วงตามบรีฟ */
+/* ⌨️ Form Elements - ช่องกรอกสีขาว ขอบเหลี่ยม */
 .label {
     display: block;
     font-weight: bold;
-    margin-bottom: 10px;
-    font-size: 0.95rem;
-    color: var(--text-sub);
+    margin-bottom: 8px;
+    font-size: 0.9rem;
 }
 
 .main-input {
     width: 100%;
-    padding: 16px;
-    border: 2px solid var(--border);
-    border-radius: 15px;
-    font-size: 1.1rem;
-    margin-bottom: 25px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    background: white; /* ไม่ใส่สีในช่องกรอกแล้ว */
+    font-size: 1rem;
+    margin-bottom: 20px;
     outline: none;
-    transition: 0.2s;
     font-family: inherit;
-    color: var(--text-main);
 }
 
 .main-input:focus {
-    border-color: var(--primary);
+    border: 2px solid var(--primary);
 }
 
-/* ✅ ✅ ✅ ไฮไลท์การแก้สีตามรูปขวา ✅ ✅ ✅ */
-/* 1. ช่อง Name เป็นสีม่วง ตัวหนังสือขาว */
-input#userName {
-    background-color: var(--primary);
-    color: white;
-    border: none;
-}
-input#userName::placeholder {
-    color: #b2bec3; /* สี Placeholder ให้ยังพอเห็น */
-}
-
-/* 2. ปุ่มโหมด เบิกเงิน (เมื่อ active) เป็นสีม่วง */
+/* ปุ่มสลับโหมด - แบบเหลี่ยม */
 .action-toggle {
     display: flex;
-    gap: 15px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .toggle-btn {
     flex: 1;
-    padding: 15px;
-    border: 2px solid var(--border);
-    border-radius: 15px;
+    padding: 12px;
+    border: 1px solid var(--border);
     background: white;
     font-weight: bold;
     cursor: pointer;
@@ -167,40 +132,45 @@ input#userName::placeholder {
 }
 
 .toggle-btn.active#modeWithdraw {
+    background: var(--primary);
+    color: white;
     border-color: var(--primary);
-    background-color: var(--primary); /* สีม่วงตามรูป */
-    color: white; /* ตัวหนังสือขาวตามรูป */
 }
 
-.toggle-btn#modeReturn.active {
+.toggle-btn.active#modeReturn {
+    background: var(--return);
+    color: white;
     border-color: var(--return);
-    background-color: #f0fff4;
-    color: var(--return);
 }
 
 /* 🔘 Submit Button */
 .btn-submit {
     width: 100%;
-    padding: 20px;
+    padding: 15px;
     border: none;
-    border-radius: 15px;
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     font-weight: bold;
     color: white;
     cursor: pointer;
-    box-shadow: 0 5px 15px rgba(108, 92, 231, 0.2);
 }
 
 .btn-withdraw { background: var(--withdraw); }
 .btn-return { background: var(--return); }
 
-/* 📊 Summary Card */
-.history-card {
-    background: var(--card-gray);
-    padding: 20px;
-    border-radius: 20px;
+/* 📊 Summary Cards (Tab 2) - แบบเหลี่ยม คลีนๆ */
+.person-card {
+    background: white;
+    padding: 15px;
     margin-bottom: 15px;
     border: 1px solid var(--border);
+}
+
+.summary-columns {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
 }
 
 /* 📜 History Table */
@@ -212,48 +182,33 @@ input#userName::placeholder {
 .history-table th {
     text-align: left;
     padding: 10px;
-    font-size: 0.85rem;
-    color: var(--text-sub);
-    border-bottom: 1px solid var(--border);
+    font-size: 0.8rem;
+    background: #f8fafc;
+    border-bottom: 2px solid var(--border);
 }
 
 .history-table td {
-    padding: 16px 10px;
-    border-bottom: 1px solid #f8fafc;
+    padding: 12px 10px;
+    border-bottom: 1px solid #f1f5f9;
 }
 
 .t-red { color: var(--withdraw); font-weight: bold; }
 .t-green { color: var(--return); font-weight: bold; }
 
-/* 💰 Sticky Footer - สีเขียวเข้มเพื่อการอ่านง่าย */
+/* 💰 Footer */
 .footer-summary {
     position: sticky;
     bottom: 0;
-    background: var(--primary-light); /* สีม่วงอ่อนเพื่อให้ Footer แยก Layer */
+    background: #f8fafc;
     padding: 20px;
-    border-top: 1px solid var(--border);
+    border-top: 2px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
 }
 
 .footer-summary h2 {
     margin: 0;
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: #1e8449; /* สีเขียวเข้มสำหรับยอดบวก */
-}
-
-.btn-submit-save-purple {
-    background-color: var(--primary); /* สีม่วงตามรูป */
-    color: white;
-    border: none;
-    width: 100%;
-    padding: 18px;
-    border-radius: 15px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    margin-top: 10px;
-    cursor: pointer;
+    font-size: 1.5rem;
+    color: #1e8449;
 }
