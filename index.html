@@ -3,20 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกการเบิกเงิน</title>
+    <title>บันทึกการเงิน</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-container">
         <header class="main-header">
             <div class="header-left">
-                <h1>💰 บันทึกการเบิกเงิน</h1>
+                <h1>💰 บันทึกการเงิน</h1>
                 <span>200 บาท = 1 ขีด</span>
             </div>
-            <div class="header-actions">
-                <button class="btn-log">📊 Log (0)</button>
-                <button class="btn-reset" onclick="resetAll()">🔄 รีเซ็ต</button>
-            </div>
+            <button class="btn-reset" onclick="resetAll()">🔄 รีเซ็ต</button>
         </header>
 
         <main class="content">
@@ -35,26 +32,16 @@
                 <button id="typeReturn" class="toggle-item" onclick="changeType('return')">คืนเงิน</button>
             </div>
 
-            <div class="input-row">
-                <input type="number" id="amountInput" placeholder="จำนวนเงินที่เบิก" inputmode="numeric">
-                <button class="btn-save" onclick="handleSave()">บันทึก</button>
-            </div>
+            <div class="action-area">
+                <button id="btnQuickWithdraw" class="btn-main-action" onclick="saveData(200)">
+                    บันทึกเบิกเงิน <strong>200 ฿</strong>
+                </button>
 
-            <div class="quick-nums">
-                <button onclick="addValue(200)">+200</button>
-                <button onclick="addValue(500)">+500</button>
-                <button onclick="addValue(1000)">+1,000</button>
-                <button onclick="addValue(2000)">+2,000</button>
-            </div>
-
-            <section class="summary-individual">
-                <label class="section-label">📊 สรุปยอดแต่ละคน</label>
-                <div class="summary-chips">
-                    <span class="summary-chip">มด</span>
-                    <span class="summary-chip">Rex</span>
-                    <span class="summary-chip">นิว</span>
+                <div id="returnInputWrapper" class="input-wrapper" style="display: none;">
+                    <input type="number" id="returnAmount" placeholder="ระบุจำนวนเงินที่คืน" inputmode="numeric">
+                    <button class="btn-save-return" onclick="handleReturnSave()">บันทึกการคืน</button>
                 </div>
-            </section>
+            </div>
 
             <div class="total-display">
                 <p>ยอดรวมวันนี้</p>
@@ -63,28 +50,22 @@
             </div>
 
             <section class="history-section">
-                <h3 class="section-label">📋 ประวัติการเบิก</h3>
+                <h3 class="section-label">📋 ประวัติรายการ</h3>
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
                                 <th>เวลา</th>
-                                <th>ผู้เบิก/คืน</th>
+                                <th>ชื่อ</th>
                                 <th>ประเภท</th>
                                 <th>จำนวน</th>
-                                <th>ขีด</th>
                             </tr>
                         </thead>
-                        <tbody id="historyBody">
-                            </tbody>
+                        <tbody id="historyBody"></tbody>
                     </table>
                 </div>
             </section>
         </main>
-        
-        <footer class="footer-note">
-            5 ขีด = 1,000 บาท • กด 🔄 รีเซ็ตเพื่อจบเกมส์และเริ่มใหม่
-        </footer>
     </div>
     <script src="script.js"></script>
 </body>
