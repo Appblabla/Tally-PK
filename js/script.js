@@ -12,7 +12,6 @@ const firebaseConfig = {
   appId: "1:849778226457:web:6ec1724e76588358f3c188"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -20,9 +19,7 @@ let currentMode = 'withdraw';
 let transactions = [];
 let sessions = [];
 
-// --- 1. Real-time Listeners (คนอื่นกด เราเห็นทันที) ---
-
-// ดึงข้อมูลรายการปัจจุบัน
+// --- Listener ---
 onValue(ref(db, 'transactions'), (snapshot) => {
     const data = snapshot.val();
     transactions = data ? Object.values(data) : [];
@@ -30,15 +27,13 @@ onValue(ref(db, 'transactions'), (snapshot) => {
     renderSummary();
 });
 
-// ดึงข้อมูลประวัติรอบเก่า
 onValue(ref(db, 'sessions'), (snapshot) => {
     const data = snapshot.val();
     sessions = data ? Object.values(data).reverse() : [];
-    renderLog();
+    window.renderLog();
 });
 
-// --- 2. ฟังก์ชันการทำงาน (ใส่ window. เพื่อให้ HTML เรียกใช้ได้) ---
-
+// --- Functions ---
 window.setMode = (mode) => {
     currentMode = mode;
     const isW = mode === 'withdraw';
@@ -58,11 +53,12 @@ window.saveEntry = (amount) => {
         time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
         name: name,
         type: currentMode,
-        amount: amount
+        amount: Math.abs(amount)
     };
 
-    // บันทึกไปที่ Firebase
     push(ref(db, 'transactions'), newTx);
+    nameInput.value = '';
+    nameInput.focus();
 };
 
 window.handleReturn = () => {
@@ -73,6 +69,7 @@ window.handleReturn = () => {
     input.value = '';
 };
 
+// 1️⃣ หน้าบันทึก (Tab 1): เบิกเป็นลบ (-) | คืนเป็นบวก (+)
 function updateUI() {
     const body = document.getElementById('historyBody');
     if (!body) return;
@@ -83,123 +80,151 @@ function updateUI() {
             <tr>
                 <td>${t.time}</td>
                 <td><strong>${t.name}</strong></td>
-                <td class="${isW ? 't-red' : 't-green'}">${isW ? '+' : '-'}${t.amount.toLocaleString()}</td>
+                <td class="${isW ? 't-red' : 't-green'}">
+                    ${isW ? '-' : '+'}${t.amount.toLocaleString()}
+                </td>
                 <td class="khit-col">${t.amount / 200} ขีด</td>
             </tr>
         `;
     }).join('');
 
-    const total = transactions.reduce((s, t) => s + (t.type === 'withdraw' ? t.amount : -t.amount), 0);
-    document.getElementById('grandTotal').innerText = `${total.toLocaleString()} ฿`;
+    // ยอดรวมกองกลาง = (คืนทั้งหมด) - (เบิกทั้งหมด)
+    const total = transactions.reduce((sum, t) => {
+        return sum + (t.type === 'withdraw' ? -t.amount : t.amount);
+    }, 0);
+    
+    const grandTotalEl = document.getElementById('grandTotal');
+    grandTotalEl.innerText = `${total >= 0 ? '+' : ''}${total.toLocaleString()} ฿`;
+    grandTotalEl.style.color = total >= 0 ? '#10b981' : '#ef4444';
 }
 
+// 2️⃣ หน้าสรุป (Tab 2): แยกคอลัมน์เบิก/คืน และยอดสุทธิ
 function renderSummary() {
     const container = document.getElementById('summaryList');
     if (!container) return;
     
     const summary = {};
     transactions.forEach(t => {
-        if (!summary[t.name]) summary[t.name] = 0;
-        summary[t.name] += (t.type === 'withdraw' ? t.amount : -t.amount);
+        if (!summary[t.name]) summary[t.name] = { withdraw: 0, return: 0 };
+        if (t.type === 'withdraw') summary[t.name].withdraw += t.amount;
+        else summary[t.name].return += t.amount;
     });
     
     const keys = Object.keys(summary);
     if (keys.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#94a3af; padding:20px;">ยังไม่มีข้อมูลในรอบนี้</p>';
+        container.innerHTML = '<p class="empty-msg">ยังไม่มีข้อมูลในรอบนี้</p>';
         return;
     }
     
-    container.innerHTML = keys.map(name => `
-        <div class="person-card">
-            <span>${name}</span>
-            <strong>${summary[name].toLocaleString()} ฿</strong>
-        </div>
-    `).join('');
+    container.innerHTML = keys.map(name => {
+        const data = summary[name];
+        const net = data.return - data.withdraw; // คืน - เบิก
+        return `
+            <div class="person-card" style="display: flex; flex-direction: column; gap: 10px; padding: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                    <strong style="font-size: 1.1em;">👤 ${name}</strong>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.8em; color: #94a3af; margin-bottom: 2px;">ยอดสุทธิ</div>
+                        <strong style="font-size: 1.2em; color: ${net >= 0 ? '#10b981' : '#ef4444'}">
+                            ${net >= 0 ? '+' : ''}${net.toLocaleString()} ฿
+                        </strong>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
+                    <div style="color: #64748b;">
+                        รวมเบิก: <span style="color: #ef4444; font-weight: bold;">-${data.withdraw.toLocaleString()}</span>
+                    </div>
+                    <div style="color: #64748b;">
+                        รวมคืน: <span style="color: #10b981; font-weight: bold;">+${data.return.toLocaleString()}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 window.endRound = () => {
-    if (transactions.length === 0) return alert("ยังไม่มีรายการให้จบยอด");
-    if (!confirm("จบยอดรอบนี้และเริ่มรอบใหม่? ข้อมูลจะถูกย้ายไปที่หน้า 'ประวัติรอบ'")) return;
-
+    if (!transactions.length) return alert("ยังไม่มีรายการ");
+    if (!confirm("จบยอดรอบนี้และเริ่มรอบใหม่?")) return;
+    
     const summary = {};
     transactions.forEach(t => {
-        if (!summary[t.name]) summary[t.name] = 0;
-        summary[t.name] += (t.type === 'withdraw' ? t.amount : -t.amount);
+        if (!summary[t.name]) summary[t.name] = { withdraw: 0, return: 0 };
+        if (t.type === 'withdraw') summary[t.name].withdraw += t.amount;
+        else summary[t.name].return += t.amount;
     });
 
-    const total = transactions.reduce((s, t) => s + (t.type === 'withdraw' ? t.amount : -t.amount), 0);
+    const total = transactions.reduce((sum, t) => sum + (t.type === 'withdraw' ? -t.amount : t.amount), 0);
     
-    const session = {
-        id: Date.now(),
-        date: new Date().toLocaleString('th-TH'),
-        total: total,
-        details: summary
-    };
-
-    // เก็บเข้าประวัติและล้างรายการปัจจุบันบน Cloud
-    push(ref(db, 'sessions'), session);
+    push(ref(db, 'sessions'), { 
+        id: Date.now(), 
+        date: new Date().toLocaleString('th-TH'), 
+        total, 
+        details: summary 
+    });
     remove(ref(db, 'transactions'));
-    
     location.hash = 'log';
 };
 
-function renderLog() {
+window.renderLog = () => {
     const container = document.getElementById('logList');
-    if (!container) return;
-    
     const filterValue = document.getElementById('logDateFilter').value;
+    if (!container) return;
+
     if (sessions.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#94a3af; padding:40px;">ไม่มีประวัติรอบที่จบไปแล้ว</p>';
+        container.innerHTML = '<p class="empty-msg">ไม่มีประวัติการจบยอด</p>';
         return;
     }
 
     let filtered = sessions;
     if (filterValue) {
-        filtered = sessions.filter(s => {
-            try {
-                return new Date(s.id).toISOString().split('T')[0] === filterValue;
-            } catch(e) { return false; }
-        });
+        filtered = sessions.filter(s => new Date(s.id).toISOString().split('T')[0] === filterValue);
+    }
+
+    if (filterValue && filtered.length === 0) {
+        container.innerHTML = '<div class="empty-msg"><p>ไม่พบรายการของวันที่เลือก</p></div>';
+        return;
     }
 
     container.innerHTML = filtered.map(s => `
         <div class="log-card">
             <div class="log-date">🕒 จบเมื่อ: ${s.date}</div>
-            <div style="font-weight:bold; margin:5px 0;">ยอดรวม: ${s.total.toLocaleString()} ฿</div>
+            <div style="font-weight:bold; margin:5px 0; font-size: 1.1em; color: ${s.total >= 0 ? '#10b981' : '#ef4444'}">
+                ยอดสุทธิรอบนี้: ${s.total >= 0 ? '+' : ''}${s.total.toLocaleString()} ฿
+            </div>
             <div class="log-details">
-                ${Object.keys(s.details).map(name => `<span>${name}: ${s.details[name].toLocaleString()}</span>`).join('')}
+                ${Object.keys(s.details).map(name => {
+                    const d = s.details[name];
+                    const net = d.return - d.withdraw;
+                    return `<span>${name}: <strong>${net >= 0 ? '+' : ''}${net.toLocaleString()}</strong></span>`;
+                }).join('')}
             </div>
         </div>
     `).join('');
-}
+};
 
 window.clearFilter = () => {
     document.getElementById('logDateFilter').value = '';
-    renderLog();
+    window.renderLog();
 };
 
 window.nuclearReset = () => {
-    if (confirm("⚠️ ล้างข้อมูลทั้งหมดบน Cloud? ข้อมูลของทุกคนจะหายถาวรนะครับ!")) {
+    if (confirm("⚠️ ล้างข้อมูลทั้งหมดถาวร?")) {
         remove(ref(db, '/'));
         location.reload();
     }
 };
 
-// --- 3. ระบบจัดการหน้า (Routing) ---
 function handleRouting() {
     const hash = window.location.hash.replace('#', '') || 'record';
-    
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-item').forEach(btn => btn.classList.remove('active'));
-
     const targetTab = document.getElementById(`tab-${hash}`);
     const targetBtn = document.getElementById(`btn-${hash}`);
-    
     if (targetTab && targetBtn) {
         targetTab.classList.add('active');
         targetBtn.classList.add('active');
     }
-
     const footer = document.querySelector('.footer-summary');
     if (footer) footer.style.display = (hash === 'record') ? 'block' : 'none';
 }
