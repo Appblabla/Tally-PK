@@ -1,44 +1,49 @@
-/* 🎨 Tally-PK: Minimal & Clean Design (No Rounded Corners) */
+/* 🎨 Tally-PK: Modern & Rounded Design System */
 :root {
-    --primary: #6C5CE7;       /* สีม่วงหลัก (ยังคงไว้ที่ Header ตามรูปที่ชอบ) */
+    --primary: #6C5CE7;       /* สีม่วงหลัก */
     --withdraw: #ef4444;       /* สีแดงเบิก (-) */
     --return: #10b981;         /* สีเขียวคืน (+) */
-    --bg-body: #f8fafc;       /* พื้นหลังหน้าเว็บสีเทาอ่อนมาก */
-    --bg-app: #ffffff;        /* พื้นหลังตัวแอปสีขาว */
+    --bg-app: #fcfcfc;        /* พื้นหลังเว็บสีเทาอ่อนมาก */
+    --card-bg: #ffffff;
     --text-main: #1e293b;
     --text-sub: #64748b;
-    --border: #cbd5e1;        /* เส้นขอบชัดเจนขึ้น */
+    --border: #dfe6e9;        /* เส้นขอบนุ่มนวล */
+    
+    /* Variables สำหรับความโค้งมน */
+    --radius-full: 50px;
+    --radius-lg: 16px;        /* สำหรับ Card, Input ใหญ่ */
+    --radius-md: 12px;        /* สำหรับปุ่ม, Element ทั่วไป */
+    --shadow: 0 4px 10px rgba(0,0,0,0.03); /* เงาฟุ้งๆ บางๆ */
 }
 
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    border-radius: 0 !important; /* สั่งให้ทุกอย่าง "เหลี่ยม" ทั้งหมด */
+    /* border-radius: 0 !important; <-- ลบบรรทัดนี้ออกแล้วครับ! */
 }
 
 body {
     font-family: 'Sarabun', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: var(--bg-body);
+    background-color: var(--bg-app);
     color: var(--text-main);
     display: flex;
     justify-content: center;
 }
 
-/* 📱 Container แบบ Web View (ไม่มีกรอบดำแล้ว) */
+/* 📱 Container คุมความกว้าง Web View */
 .app-container {
     width: 100%;
-    max-width: 500px; /* ขยายกว้างขึ้นนิดนึงให้ดูไม่อึดอัด */
+    max-width: 480px;
     min-height: 100vh;
-    background: var(--bg-app);
+    background: var(--card-bg);
     display: flex;
     flex-direction: column;
-    border-left: 1px solid var(--border);
-    border-right: 1px solid var(--border);
+    box-shadow: 0 0 30px rgba(0,0,0,0.03); /* เงาด้านข้างเวลาดูบน Desktop */
 }
 
-/* 📍 Header สีม่วง (คงความสดใสไว้ที่ส่วนบน) */
+/* 📍 Header สีม่วงพร้อมขอบมนด้านล่าง */
 .main-header {
     background: var(--primary);
     padding: 25px 20px 15px;
@@ -50,37 +55,41 @@ body {
 }
 
 .main-header h1 {
-    font-size: 1.3rem;
-    margin: 0 0 15px;
-    letter-spacing: 1px;
+    font-size: 1.4rem;
+    margin: 0 0 20px;
+    font-weight: 800;
 }
 
-/* Tab Navigation - แบบเหลี่ยม */
+/* Tab Navigation - แบบโค้ดเดิมที่ดูดี */
 .tab-nav {
     display: flex;
     background: rgba(0, 0, 0, 0.1);
-    padding: 2px;
+    padding: 4px;
+    border-radius: var(--radius-full);
 }
 
 .tab-item {
     flex: 1;
     border: none;
     padding: 12px;
+    border-radius: var(--radius-full);
     cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: bold;
+    font-size: 0.95rem;
+    font-weight: 700;
     color: rgba(255, 255, 255, 0.7);
     background: transparent;
+    transition: 0.2s;
 }
 
 .tab-item.active {
     background: white;
     color: var(--primary);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 /* 📝 Content Area */
 .content-area {
-    padding: 20px;
+    padding: 20px 15px 120px;
     flex: 1;
 }
 
@@ -92,32 +101,47 @@ body {
     display: block;
 }
 
-/* ⌨️ Form Elements - ช่องกรอกสีขาว ขอบเหลี่ยม */
+/* ⌨️ Form Elements - Modern style (Rounded & Minimal) */
+.form-group {
+    margin-bottom: 25px;
+}
+
 .label {
     display: block;
     font-weight: bold;
     margin-bottom: 8px;
     font-size: 0.9rem;
+    color: var(--text-main);
 }
 
+/* ช่อง Input ดีไซน์ใหม่ให้ดูทันสมัย ไม่โบราณ */
 .main-input {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     border: 1px solid var(--border);
-    background: white; /* ไม่ใส่สีในช่องกรอกแล้ว */
-    font-size: 1rem;
+    border-radius: var(--radius-md); /* เพิ่มความโค้งมน */
+    background: white;
+    font-size: 1.1rem;
     margin-bottom: 20px;
     outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
     font-family: inherit;
+    color: var(--text-main);
 }
 
 .main-input:focus {
-    border: 2px solid var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1); /* สีม่วงเรืองแสงเวลาคลิก */
 }
 
-/* ปุ่มสลับโหมด - แบบเหลี่ยม */
+input::placeholder {
+    color: #cbd5e1;
+}
+
+/* ปุ่มสลับโหมด - คืนความขอบมน */
 .action-toggle {
     display: flex;
+    gap: 10px;
     margin-bottom: 20px;
 }
 
@@ -125,8 +149,9 @@ body {
     flex: 1;
     padding: 12px;
     border: 1px solid var(--border);
+    border-radius: var(--radius-md); /* คืนขอบมน */
     background: white;
-    font-weight: bold;
+    font-weight: 700;
     cursor: pointer;
     color: var(--text-sub);
 }
@@ -143,37 +168,37 @@ body {
     border-color: var(--return);
 }
 
-/* 🔘 Submit Button */
+/* 🔘 Submit Button - ขอบมนเด่นชัด */
 .btn-submit {
     width: 100%;
-    padding: 15px;
+    padding: 16px;
     border: none;
+    border-radius: var(--radius-md); /* คืนขอบมน */
     font-size: 1.1rem;
     font-weight: bold;
     color: white;
     cursor: pointer;
+    box-shadow: 0 4px 10px rgba(108, 92, 231, 0.2);
 }
 
 .btn-withdraw { background: var(--withdraw); }
 .btn-return { background: var(--return); }
 
-/* 📊 Summary Cards (Tab 2) - แบบเหลี่ยม คลีนๆ */
+/* 📊 Summary Cards (Tab 2) - ขอบมนนุ่มๆ */
 .person-card {
     background: white;
-    padding: 15px;
+    padding: 20px;
+    border-radius: var(--radius-lg); /* คืนขอบมนนุ่มๆ */
     margin-bottom: 15px;
     border: 1px solid var(--border);
+    box-shadow: var(--shadow);
 }
 
-.summary-columns {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #f1f5f9;
+.person-card strong {
+    font-size: 1.1rem;
 }
 
-/* 📜 History Table */
+/* 📜 History Table - ไม่ต้องมนมากแต่ขอบเส้นชัด */
 .history-table {
     width: 100%;
     border-collapse: collapse;
@@ -183,32 +208,47 @@ body {
     text-align: left;
     padding: 10px;
     font-size: 0.8rem;
-    background: #f8fafc;
+    color: var(--text-sub);
     border-bottom: 2px solid var(--border);
 }
 
 .history-table td {
-    padding: 12px 10px;
-    border-bottom: 1px solid #f1f5f9;
+    padding: 14px 10px;
+    border-bottom: 1px solid #f8fafc;
 }
 
 .t-red { color: var(--withdraw); font-weight: bold; }
 .t-green { color: var(--return); font-weight: bold; }
 
-/* 💰 Footer */
+/* 💰 Sticky Footer - ขอบมนด้านบนแยก Layer */
 .footer-summary {
     position: sticky;
     bottom: 0;
-    background: #f8fafc;
-    padding: 20px;
-    border-top: 2px solid var(--border);
+    background: white;
+    padding: 18px 20px;
+    border-top: 1px solid var(--border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0; /* มนเฉพาะขอบบน */
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.03);
 }
 
 .footer-summary h2 {
     margin: 0;
-    font-size: 1.5rem;
-    color: #1e8449;
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: #1e8449; /* สีเขียวเข้มสำหรับยอดบวก */
+}
+
+/* 🔙 จบยอด Button */
+.btn-end-round {
+    width: 100%;
+    padding: 12px;
+    background: #1e293b;
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: bold;
+    margin-top: 25px;
 }
