@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกการเงิน</title>
+    <title>บันทึกการเงิน (ระบบขีด)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-container">
         <header class="main-header">
             <div class="header-left">
-                <h1>💰 บันทึกการเงิน</h1>
-                <span>200 บาท = 1 ขีด</span>
+                <h1>📊 ระบบบันทึกขีด</h1>
+                <span>อัตราส่วน: 200 ฿ = 1 ขีด</span>
             </div>
-            <button class="btn-reset" onclick="resetAll()">🔄 รีเซ็ต</button>
         </header>
 
         <main class="content">
@@ -34,7 +33,7 @@
 
             <div class="action-area">
                 <button id="btnQuickWithdraw" class="btn-main-action" onclick="saveData(200)">
-                    บันทึกเบิกเงิน <strong>200 ฿</strong>
+                    บันทึกเบิกเงิน <strong>+1 ขีด (200 ฿)</strong>
                 </button>
 
                 <div id="returnInputWrapper" class="input-wrapper" style="display: none;">
@@ -43,14 +42,35 @@
                 </div>
             </div>
 
+            <section class="individual-summary">
+                <label class="section-label">📋 ยอดคงเหลือรายคน</label>
+                <div class="user-cards">
+                    <div class="user-card" id="card-มด">
+                        <span class="user-name">มด</span>
+                        <div class="user-total"><span id="val-มด">0</span> ขีด</div>
+                        <small id="baht-มด">0 ฿</small>
+                    </div>
+                    <div class="user-card" id="card-Rex">
+                        <span class="user-name">Rex</span>
+                        <div class="user-total"><span id="val-Rex">0</span> ขีด</div>
+                        <small id="baht-Rex">0 ฿</small>
+                    </div>
+                    <div class="user-card" id="card-นิว">
+                        <span class="user-name">นิว</span>
+                        <div class="user-total"><span id="val-นิว">0</span> ขีด</div>
+                        <small id="baht-นิว">0 ฿</small>
+                    </div>
+                </div>
+            </section>
+
             <div class="total-display">
-                <p>ยอดรวมวันนี้</p>
-                <h2 id="totalText">0 ฿</h2>
-                <span id="unitText">0 ขีด</span>
+                <p>รวมยอดทั้งกอง</p>
+                <h2 id="totalUnit">0 ขีด</h2>
+                <span id="totalBaht">0 ฿</span>
             </div>
 
             <section class="history-section">
-                <h3 class="section-label">📋 ประวัติรายการ</h3>
+                <h3 class="section-label">📜 ประวัติล่าสุด</h3>
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -58,7 +78,7 @@
                                 <th>เวลา</th>
                                 <th>ชื่อ</th>
                                 <th>ประเภท</th>
-                                <th>จำนวน</th>
+                                <th>ขีด</th>
                             </tr>
                         </thead>
                         <tbody id="historyBody"></tbody>
