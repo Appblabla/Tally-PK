@@ -1,99 +1,76 @@
 :root {
-    --primary: #6366f1;
-    --withdraw: #ef4444;
-    --return: #10b981;
+    --primary: #4f46e5;
+    --bg: #f8fafc;
 }
 
 body {
     font-family: 'Sarabun', sans-serif;
-    background-color: #f0f2f5;
+    background-color: #f1f5f9;
     margin: 0; padding: 15px;
     display: flex; justify-content: center;
 }
 
 .app-container {
     width: 100%; max-width: 450px;
-    background: white; border-radius: 24px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden;
+    background: white; border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden;
 }
 
 .main-header {
-    background: linear-gradient(135deg, #4f46e5, #9333ea);
-    color: white; padding: 25px 20px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white; padding: 25px; text-align: center;
 }
 
 .content { padding: 20px; }
-.section-label { font-size: 0.85rem; font-weight: bold; color: #6b7280; text-transform: uppercase; margin-bottom: 12px; display: block; }
+.section-label { font-size: 0.9rem; font-weight: bold; color: #64748b; margin-bottom: 8px; display: block; }
 
-/* Chips */
-.chip-group { display: flex; gap: 8px; margin-bottom: 20px; }
-.chip {
-    padding: 10px 20px; border: 1.5px solid #e5e7eb;
-    background: white; border-radius: 12px; cursor: pointer; transition: 0.2s;
+/* Input Style */
+.main-input {
+    width: 100%; padding: 14px;
+    border: 2px solid #e2e8f0; border-radius: 12px;
+    font-size: 1rem; box-sizing: border-box;
+    transition: 0.2s;
 }
-.chip.active { background: #4f46e5; color: white; border-color: #4f46e5; font-weight: bold; }
+.main-input:focus { border-color: #4f46e5; outline: none; background: #fdfdff; }
 
 /* Toggle */
 .action-toggle {
-    display: flex; background: #f3f4f6; border-radius: 12px; padding: 4px; margin-bottom: 20px;
+    display: flex; background: #f1f5f9;
+    border-radius: 12px; padding: 5px; margin: 20px 0;
 }
 .toggle-item {
-    flex: 1; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; background: transparent; color: #6b7280;
+    flex: 1; border: none; padding: 12px;
+    border-radius: 8px; cursor: pointer; font-weight: bold;
+    background: transparent; color: #94a3b8;
 }
-.toggle-item.active { background: #3b82f6; color: white; }
+.toggle-item.active { background: white; color: #4f46e5; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-/* Action Buttons */
+/* Buttons */
 .btn-main-action {
-    width: 100%; padding: 20px; background: #6366f1; color: white; border: none; border-radius: 16px; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    width: 100%; padding: 18px;
+    background: #4f46e5; color: white;
+    border: none; border-radius: 12px;
+    font-size: 1.1rem; cursor: pointer; font-weight: bold;
 }
 
 .input-wrapper { display: flex; flex-direction: column; gap: 10px; }
-#returnAmount { padding: 15px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 1.2rem; text-align: center; }
-.btn-save-return { padding: 15px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-
-/* Individual Summary Cards */
-.user-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
-.user-card {
-    background: #f9fafb; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #f3f4f6;
+.btn-save-return {
+    padding: 15px; background: #10b981; color: white;
+    border: none; border-radius: 12px; font-weight: bold; cursor: pointer;
 }
-.user-name { font-size: 0.8rem; color: #6b7280; display: block; margin-bottom: 4px; }
-.user-total { font-size: 1.1rem; font-weight: bold; color: #1f2937; }
-.user-card small { font-size: 0.7rem; color: #9ca3af; }
 
-/* Total Card */
+/* Total Display */
 .total-display {
-    background: #eff6ff; text-align: center; padding: 20px; border-radius: 16px; margin-bottom: 25px;
+    background: #f0fdf4; text-align: center;
+    padding: 20px; border-radius: 16px; margin: 25px 0;
 }
-.total-display h2 { font-size: 2.4rem; color: #1e40af; margin: 0; }
-.total-display span { color: #60a5fa; font-weight: bold; }
+.total-display h2 { font-size: 2.5rem; color: #166534; margin: 0; }
+.total-display p { margin: 0; color: #166534; opacity: 0.7; font-size: 0.9rem; }
 
-/* Table Style */
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-th { text-align: left; color: #9ca3af; padding: 10px; border-bottom: 1px solid #f3f4f6; font-weight: normal; }
-td { padding: 12px 10px; border-bottom: 1px solid #f9fafb; }
-.badge-w { color: #ef4444; font-weight: bold; }
-.badge-r { color: #10b981; font-weight: bold; }
-/* เพิ่มเติมจากของเดิม */
-.khit-symbol {
-    color: #4f46e5;
-    font-weight: bold;
-    margin-left: 10px;
-    letter-spacing: 2px;
-}
+/* Table */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th { text-align: left; color: #94a3af; padding: 10px; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; }
+td { padding: 15px 10px; border-bottom: 1px solid #f8fafc; font-size: 0.9rem; }
 
-.user-badge {
-    background: #dbeafe;
-    color: #1e40af;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-weight: bold;
-}
-
-.text-red { color: #ef4444; font-weight: bold; }
-.text-green { color: #10b981; font-weight: bold; }
-
-.individual-summary {
-    margin-top: 20px;
-    border-top: 1px solid #eee;
-    padding-top: 15px;
-}
+.t-withdraw { color: #ef4444; font-weight: bold; }
+.t-return { color: #10b981; font-weight: bold; }
