@@ -3,13 +3,13 @@ import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com
 
 // 🚩 Firebase Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCr9fXfx9m9cQ9_N_VhE3VTLbgdk3ZXRKM",
-  authDomain: "tally-pk.firebaseapp.com",
-  databaseURL: "https://tally-pk-default-rtdb.asia-southeast1.firebasedatabase.app/", 
-  projectId: "tally-pk",
-  storageBucket: "tally-pk.firebasestorage.app",
-  messagingSenderId: "849778226457",
-  appId: "1:849778226457:web:6ec1724e76588358f3c188"
+    apiKey: "AIzaSyCr9fXfx9m9cQ9_N_VhE3VTLbgdk3ZXRKM",
+    authDomain: "tally-pk.firebaseapp.com",
+    databaseURL: "https://tally-pk-default-rtdb.asia-southeast1.firebasedatabase.app/", 
+    projectId: "tally-pk",
+    storageBucket: "tally-pk.firebasestorage.app",
+    messagingSenderId: "849778226457",
+    appId: "1:849778226457:web:6ec1724e76588358f3c188"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -98,7 +98,7 @@ function updateUI() {
     grandTotalEl.style.color = total >= 0 ? '#10b981' : '#ef4444';
 }
 
-// 2️⃣ หน้าสรุป (Tab 2): แยกคอลัมน์เบิก/คืน และยอดสุทธิ
+// 2️⃣ หน้าสรุป (Tab 2): อัปเดตสีตัวเลขเบิก/คืน ตามที่คุณต้องการ
 function renderSummary() {
     const container = document.getElementById('summaryList');
     if (!container) return;
@@ -132,10 +132,10 @@ function renderSummary() {
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
                     <div style="color: #64748b;">
-                        รวมเบิก: <span style="color: #ef4444; font-weight: bold;">-${data.withdraw.toLocaleString()}</span>
+                        รวมเบิก: <strong style="color: #ef4444;">-${data.withdraw.toLocaleString()} ฿</strong>
                     </div>
                     <div style="color: #64748b;">
-                        รวมคืน: <span style="color: #10b981; font-weight: bold;">+${data.return.toLocaleString()}</span>
+                        รวมคืน: <strong style="color: #10b981;">+${data.return.toLocaleString()} ฿</strong>
                     </div>
                 </div>
             </div>
@@ -226,7 +226,7 @@ function handleRouting() {
         targetBtn.classList.add('active');
     }
     const footer = document.querySelector('.footer-summary');
-    if (footer) footer.style.display = (hash === 'record') ? 'block' : 'none';
+    if (footer) footer.style.display = (hash === 'record') ? 'flex' : 'none';
 }
 
 window.addEventListener('hashchange', handleRouting);
