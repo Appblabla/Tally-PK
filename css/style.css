@@ -1,276 +1,131 @@
-/* 🎨 Tally-PK: Global Styles & Variables */
 :root {
-    --primary: #6366f1;
-    --withdraw: #ef4444; /* สีแดงสำหรับเบิก (-) */
-    --return: #10b981;   /* สีเขียวสำหรับคืน (+) */
-    --bg: #f8fafc;
-    --card-bg: #ffffff;
-    --text-main: #1e293b;
-    --text-sub: #64748b;
-    --border: #e2e8f0;
-}
-
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
+    --primary: #4f46e5;
+    --success: #10b981;
+    --danger: #ef4444;
+    --dark: #1e293b;
+    --bg: #f1f5f9;
 }
 
 body {
     font-family: 'Sarabun', sans-serif;
     background-color: var(--bg);
-    color: var(--text-main);
-    margin: 0;
-    padding: 0;
-    line-height: 1.5;
+    margin: 0; padding: 10px;
+    display: flex; justify-content: center;
 }
 
 .app-container {
-    max-width: 500px;
-    margin: 0 auto;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+    width: 100%; max-width: 480px;
+    background: white; border-radius: 24px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    display: flex; flex-direction: column; height: 95vh; overflow: hidden;
 }
 
-/* 📍 Header & Tabs */
 .main-header {
-    background: white;
-    padding: 20px 15px 10px;
-    text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    border-bottom: 1px solid var(--border);
-}
-
-.main-header h1 {
-    font-size: 1.4rem;
-    margin: 0 0 15px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white; padding: 25px 15px 15px; text-align: center;
 }
 
 .tab-nav {
-    display: flex;
-    background: #f1f5f9;
-    padding: 4px;
-    border-radius: 12px;
-    gap: 4px;
+    display: flex; background: rgba(255,255,255,0.15);
+    margin: 20px 5px 5px; border-radius: 12px; padding: 4px;
 }
 
 .tab-item {
-    flex: 1;
-    border: none;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-sub);
-    background: transparent;
-    transition: 0.2s;
+    flex: 1; border: none; background: transparent; color: white;
+    padding: 10px; border-radius: 8px; cursor: pointer; font-family: 'Sarabun';
 }
+.tab-item.active { background: white; color: var(--primary); font-weight: bold; }
 
-.tab-item.active {
-    background: white;
-    color: var(--primary);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
+.content-area { flex: 1; padding: 25px; overflow-y: auto; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
-/* 📝 Content Area */
-.content-area {
-    padding: 20px 15px 120px;
-    flex: 1;
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-/* ⌨️ Inputs & Controls */
-.label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-    color: var(--text-sub);
-}
+/* Spacing ปรับตามที่ขอ */
+.input-group { margin-bottom: 35px; }
+.label { font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 12px; display: block; }
 
 .main-input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    font-size: 1rem;
-    margin-bottom: 20px;
-    outline: none;
-    transition: 0.2s;
-}
-
-.main-input:focus {
-    border-color: var(--primary);
+    width: 100%; padding: 14px; border: 2px solid #e2e8f0;
+    border-radius: 12px; font-size: 1rem; box-sizing: border-box;
 }
 
 .action-toggle {
+    display: flex; background: #f1f5f9; border-radius: 12px; padding: 5px; margin: 25px 0 35px;
+}
+.toggle-btn {
+    flex: 1; border: none; padding: 12px; border-radius: 8px;
+    cursor: pointer; background: transparent; color: #94a3b8; font-weight: bold;
+}
+.toggle-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+.button-section { margin-bottom: 45px; }
+
+.btn-submit {
+    width: 100%; padding: 20px; border: none; border-radius: 16px;
+    font-size: 1.15rem; font-weight: bold; cursor: pointer; color: white;
+}
+.btn-withdraw { background: var(--primary); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+.btn-return { background: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+
+/* Table & Log */
+.history-container { margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+.history-table { width: 100%; border-collapse: collapse; }
+.history-table th { text-align: left; font-size: 0.75rem; color: #94a3af; padding: 12px 8px; border-bottom: 1px solid #f1f5f9; }
+.history-table td { padding: 15px 8px; border-bottom: 1px solid #f8fafc; font-size: 0.95rem; }
+
+.khit-col { color: var(--primary); font-weight: bold; }
+.t-red { color: var(--danger); font-weight: bold; }
+.t-green { color: var(--success); font-weight: bold; }
+
+.person-card {
+    display: flex; justify-content: space-between; padding: 15px;
+    background: #f8fafc; border-radius: 12px; margin-bottom: 10px; border: 1px solid #f1f5f9;
+}
+.btn-end-round {
+    width: 100%; padding: 15px; background: var(--dark); color: white;
+    border: none; border-radius: 12px; margin-top: 30px; cursor: pointer; font-weight: bold;
+}
+
+.log-card { background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 12px; }
+.log-date { font-size: 0.7rem; color: #94a3af; }
+.log-details { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.log-details span { font-size: 0.75rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+
+.footer-summary { background: #f0fdf4; padding: 20px; text-align: center; border-top: 1px solid #dcfce7; }
+.footer-summary h2 { margin: 5px 0 0; color: #166534; font-size: 2.2rem; }
+
+/* ส่วนกรองวันที่ */
+.filter-area {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
 }
 
-.toggle-btn {
+.filter-input {
     flex: 1;
-    padding: 12px;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    background: white;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.toggle-btn.active {
-    border-color: var(--primary);
-    background: #eef2ff;
-    color: var(--primary);
-}
-
-/* 🔘 Buttons */
-.btn-submit {
-    width: 100%;
-    padding: 15px;
-    border: none;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: white;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.btn-withdraw { background-color: var(--withdraw); }
-.btn-return { background-color: var(--return); }
-.btn-submit:active { transform: scale(0.98); }
-
-/* 📊 Summary Cards (Tab 2) - แบ่งเป็นคอลัมน์ */
-.person-card {
-    background: white;
-    padding: 18px;
-    border-radius: 16px;
-    margin-bottom: 15px;
-    border: 1px solid var(--border);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-.person-card strong {
-    font-size: 1.1rem;
-}
-
-/* ยอดสุทธิใน Card */
-.net-amount {
-    font-size: 1.2rem;
-    font-weight: 800;
-}
-
-/* ส่วนแบ่งคอลัมน์ รวมเบิก / รวมคืน */
-.summary-columns {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--border);
-}
-
-.col {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.col span {
-    font-size: 0.8rem;
-    color: var(--text-sub);
-}
-
-.col strong {
-    font-size: 1rem;
-}
-
-/* 📜 History Table (Tab 1) */
-.history-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.history-table th {
-    text-align: left;
     padding: 10px;
-    font-size: 0.8rem;
-    color: var(--text-sub);
-    border-bottom: 1px solid var(--border);
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-family: 'Sarabun', sans-serif;
 }
 
-.history-table td {
-    padding: 12px 10px;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.t-red { color: var(--withdraw); font-weight: bold; }
-.t-green { color: var(--return); font-weight: bold; }
-
-/* 💰 Footer Total */
-.footer-summary {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    max-width: 500px;
-    margin: 0 auto;
-    background: white;
-    padding: 15px 20px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
-}
-
-.footer-summary p { margin: 0; color: var(--text-sub); font-size: 0.9rem; }
-.footer-summary h2 { margin: 0; font-size: 1.5rem; }
-
-/* 🔚 End Round Button */
-.btn-end-round {
-    width: 100%;
-    padding: 12px;
-    background: #1e293b;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-weight: bold;
-    margin-top: 20px;
-    cursor: pointer;
-}
-
-/* 📜 Log Page (Tab 3) */
-.log-card {
+.btn-clear-filter {
+    padding: 10px 15px;
     background: #f1f5f9;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-}
-
-.log-date { font-size: 0.8rem; color: var(--text-sub); }
-.log-details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
-    margin-top: 10px;
-    font-size: 0.85rem;
+    border: none;
+    border-radius: 10px;
+    color: #64748b;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 .empty-msg {
     text-align: center;
-    padding: 40px 20px;
-    color: var(--text-sub);
+    color: #94a3af;
+    padding: 40px 0;
+}
+
+/* ปรับปรุง Footer ให้ซ่อนได้เนียนๆ */
+.footer-summary {
+    transition: 0.3s;
 }
