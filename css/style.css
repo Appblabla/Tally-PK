@@ -321,4 +321,66 @@ body {
     border: 1px solid var(--border);
     margin-bottom: 20px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}/* --- ส่วนเพิ่มเติมสำหรับระบบ Edit ชื่อ และ Badge ตรวจสอบเครื่อง --- */
+
+/* จัดกลุ่มช่อง Input ชื่อกับปุ่ม Edit ให้ขนานกัน */
+.input-group div[style*="display: flex"] {
+    margin-bottom: 20px;
 }
+
+/* ปรับแต่งปุ่ม Edit (รูปปากกา) */
+#btn-edit-name {
+    transition: all 0.2s ease;
+    border: 1px solid var(--border) !important;
+}
+
+#btn-edit-name:hover {
+    background: #eef2ff !important;
+    color: var(--primary-start) !important;
+}
+
+#btn-edit-name:active {
+    transform: scale(0.95);
+}
+
+/* ปรับความใสของ Input เมื่อถูกล็อก (Disabled) */
+.main-input:disabled {
+    background-color: #f1f5f9;
+    color: var(--text-sub);
+    cursor: not-allowed;
+    border-style: dashed; /* ทำให้ดูรู้ว่าล็อกไว้แต่แก้ได้ */
+}
+
+/* Badge รุ่นมือถือ (via Device) ในตารางประวัติ */
+.history-table td small {
+    display: inline-block;
+    margin-top: 4px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    /* ใช้สีที่ดูสะอาดตา ไม่แย่งซีนชื่อ */
+    color: #94a3af;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+}
+
+/* Note ประวัติการเปลี่ยนชื่อ (Rename Note) */
+.history-table td small[style*="italic"] {
+    background: transparent;
+    padding: 0;
+    color: #cbd5e1;
+    display: block;
+    margin-top: 2px;
+}
+
+/* ปรับปรุง Footer ให้เนื้อหาดูสมดุล */
+.footer-summary div {
+    line-height: 1.2;
+}
+
+.footer-summary h2 {
+    font-size: 1.4rem; /* ปรับขนาดให้พอดี ไม่ใหญ่จนล้น */
+    letter-spacing: -0.5px;
+}
+
