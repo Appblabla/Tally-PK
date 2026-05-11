@@ -1,12 +1,10 @@
-// --- 1. ตั้งค่าเริ่มต้นและโหลดข้อมูลจากเครื่อง ---
 let currentMode = 'withdraw';
 let transactions = JSON.parse(localStorage.getItem('myTransactions')) || [];
 let sessions = JSON.parse(localStorage.getItem('mySessions')) || [];
 
-// เรียกใช้งานทันทีเมื่อโหลดหน้าเว็บ
+// เริ่มต้นระบบเมื่อโหลดหน้า
 updateUI();
 
-// --- 2. ฟังก์ชันสลับ Tab และจัดการ Footer ---
 function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-item').forEach(btn => {
@@ -24,7 +22,6 @@ function switchTab(tabName) {
     if (tabName === 'log') renderLog();
 }
 
-// --- 3. ฟังก์ชันจัดการการเบิก-คืน ---
 function setMode(mode) {
     currentMode = mode;
     const isW = mode === 'withdraw';
@@ -65,7 +62,6 @@ function saveEntry(amount) {
     updateUI();
 }
 
-// --- 4. ฟังก์ชันอัปเดตหน้าจอ (UI) ---
 function updateUI() {
     const body = document.getElementById('historyBody');
     if (!body) return;
@@ -97,6 +93,7 @@ function renderSummary() {
     });
     const keys = Object.keys(summary);
     if (keys.length === 0) return container.innerHTML = '';
+    
     container.innerHTML = keys.map(name => `
         <div class="person-card">
             <span>${name}</span>
@@ -105,15 +102,11 @@ function renderSummary() {
     `).join('');
 }
 
-// 🚩 ปรับปรุงส่วนนี้: แสดง "ไม่พบข้อมูล" เมื่อ Filter แล้วไม่เจอ
 function renderLog() {
     const container = document.getElementById('logList');
     const filterValue = document.getElementById('logDateFilter').value;
     
-    if (sessions.length === 0) {
-        container.innerHTML = '';
-        return;
-    }
+    if (sessions.length === 0) return container.innerHTML = '';
 
     let filteredSessions = sessions;
     if (filterValue) {
@@ -123,7 +116,6 @@ function renderLog() {
         });
     }
 
-    // ถ้ามีการเลือกวันที่แล้วไม่พบข้อมูล ให้ขึ้นข้อความแจ้งเตือน
     if (filterValue && filteredSessions.length === 0) {
         container.innerHTML = '<p class="empty-msg">❌ ไม่พบข้อมูลในวันที่เลือก</p>';
         return;
