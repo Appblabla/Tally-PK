@@ -1,59 +1,37 @@
-:root {
-    --primary: #4f46e5;
-    --success: #10b981;
-    --danger: #ef4444;
-    --bg: #f1f5f9;
-}
-
-body { font-family: 'Sarabun', sans-serif; background-color: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; }
-
+:root { --primary: #4f46e5; --success: #10b981; --danger: #ef4444; --bg: #f1f5f9; }
+body { font-family: 'Sarabun', sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; }
 .app-container { width: 100%; max-width: 480px; background: white; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: flex; flex-direction: column; height: 95vh; overflow: hidden; }
-
 .main-header { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 25px 15px 15px; text-align: center; }
-
 .tab-nav { display: flex; background: rgba(255,255,255,0.15); margin: 20px 5px 5px; border-radius: 12px; padding: 4px; }
-
-.tab-item { flex: 1; border: none; background: transparent; color: white; padding: 10px; border-radius: 8px; cursor: pointer; font-family: 'Sarabun'; }
+.tab-item { flex: 1; border: none; background: transparent; color: white; padding: 12px; border-radius: 8px; cursor: pointer; font-family: 'Sarabun'; transition: 0.2s; }
 .tab-item.active { background: white; color: var(--primary); font-weight: bold; }
-
 .content-area { flex: 1; padding: 25px; overflow-y: auto; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
-
 .input-group { margin-bottom: 30px; }
 .label { font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 12px; display: block; }
-
 .main-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; box-sizing: border-box; }
-
 .action-toggle { display: flex; background: #f1f5f9; border-radius: 12px; padding: 5px; margin-bottom: 30px; }
 .toggle-btn { flex: 1; border: none; padding: 12px; border-radius: 8px; cursor: pointer; background: transparent; color: #94a3b8; font-weight: bold; }
 .toggle-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-
 .btn-submit { width: 100%; padding: 20px; border: none; border-radius: 16px; font-size: 1.15rem; font-weight: bold; cursor: pointer; color: white; }
 .btn-withdraw { background: var(--primary); }
 .btn-return { background: var(--success); }
-
-.history-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.history-table { width: 100%; border-collapse: collapse; }
 .history-table th { text-align: left; font-size: 0.75rem; color: #94a3af; padding: 12px 8px; border-bottom: 1px solid #f1f5f9; }
 .history-table td { padding: 15px 8px; border-bottom: 1px solid #f8fafc; font-size: 0.95rem; }
-
 .t-red { color: var(--danger); font-weight: bold; }
 .t-green { color: var(--success); font-weight: bold; }
-
+.khit-col { color: var(--primary); font-weight: bold; }
 .person-card { display: flex; justify-content: space-between; padding: 15px; background: #f8fafc; border-radius: 12px; margin-bottom: 10px; border: 1px solid #f1f5f9; }
-
 .btn-end-round { width: 100%; padding: 15px; background: #1e293b; color: white; border: none; border-radius: 12px; margin-top: 20px; cursor: pointer; font-weight: bold; }
-
 .filter-area { display: flex; gap: 10px; margin-bottom: 20px; }
 .filter-input { flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 10px; font-family: 'Sarabun'; }
 .btn-clear-filter { padding: 10px; background: #f1f5f9; border: none; border-radius: 10px; color: #64748b; cursor: pointer; }
-
 .log-card { background: white; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 12px; }
 .log-date { font-size: 0.7rem; color: #94a3af; }
 .log-details { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .log-details span { font-size: 0.75rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #64748b; }
-
 .empty-msg { text-align: center; color: #94a3af; padding: 30px; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 12px; }
-
 .footer-summary { background: #f0fdf4; padding: 20px; text-align: center; border-top: 1px solid #dcfce7; }
 .footer-summary h2 { margin: 5px 0 0; color: #166534; font-size: 2.2rem; }
