@@ -129,3 +129,13 @@ body {
 .footer-summary {
     transition: 0.3s;
 }
+.empty-msg {
+    text-align: center;
+    color: #94a3af;
+    padding: 40px 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 2px dashed #e2e8f0;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
