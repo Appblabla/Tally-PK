@@ -58,6 +58,9 @@ window.switchLoginRole = (role) => {
 window.submitAdminLogin = () => {
     if(document.getElementById('adminPasswordInput').value === '1401') { 
         state.currentRole = 'admin';
+        // ✅ จำสถานะ Admin ลงเครื่อง
+        localStorage.setItem('tallyLoginStatus', 'loggedin');
+        localStorage.setItem('tallyLoginRole', 'admin');
         window.unlockApplication();
     } else {
         window.showCustomAlert("icon-error", "สิทธิ์การเข้าถึง", "รหัสผ่านไม่ถูกต้อง");
@@ -67,6 +70,9 @@ window.submitAdminLogin = () => {
 window.submitMemberLogin = () => {
     if(document.getElementById('roomCodeInput').value === state.roomCode) {
         state.currentRole = 'member';
+        // ✅ จำสถานะ สมาชิก ลงเครื่อง
+        localStorage.setItem('tallyLoginStatus', 'loggedin');
+        localStorage.setItem('tallyLoginRole', 'member');
         window.unlockApplication();
     } else {
         window.showCustomAlert("icon-error", "ระบุเลขห้อง", "เลขห้องไม่ถูกต้อง ไม่สามารถเข้าถึงห้องนี้ได้!");
@@ -100,6 +106,10 @@ window.unlockApplication = () => {
 };
 
 window.forceLockApplication = () => {
+    // ❌ ล้างข้อมูลความจำการล็อกอินทั้งหมดเมื่อโดนเตะหรือล็อกเอาต์
+    localStorage.removeItem('tallyLoginStatus');
+    localStorage.removeItem('tallyLoginRole');
+
     document.getElementById('login-overlay').style.display = 'flex';
     document.getElementById('main-app').style.setProperty('display', 'none', 'important');
     document.getElementById('roomCodeInput').value = '';
@@ -129,8 +139,18 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
         if(data.roomCode && data.roomCode !== state.roomCode) {
             state.roomCode = data.roomCode;
             document.getElementById('roomCodeDisplay').innerText = state.roomCode;
+            
+            // 💡 เคสพิเศษ: ถ้าหากเลขห้องในระบบเปลี่ยนไปแล้ว และผู้ใช้ปัจจุบันเป็น Role สมาชิก ('member') 
+            // ให้ตรวจสอบว่าตรงกับที่ล็อกอินค้างไว้ไหม ถ้าไม่ตรง ให้สั่งดีดออกทันทีป้องกันเข้าห้องผิด
+            if(localStorage.getItem('tallyLoginRole') === 'member' && localStorage.getItem('tallyLoginStatus') === 'loggedin') {
+                const lastEnteredRoom = document.getElementById('roomCodeInput').value;
+                if(lastEnteredRoom && lastEnteredRoom !== state.roomCode) {
+                     window.forceLockApplication();
+                }
+            }
         }
         
+        // ถ้าระบบโดน Reset สั่งดีดคนออก (และล้างข้อมูลจำล็อกอิน)
         if(data.isResetting && state.currentRole === 'member' && document.getElementById('login-overlay').style.display === 'none') {
             window.showCustomAlert(
                 "icon-confirm", 
@@ -140,7 +160,22 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
             );
         }
     }
+    
+    // 🚀 [ฟังก์ชันตรวจสอบสิทธิ์อัตโนมัติเมื่อเปิดหน้าจอขึ้นมา]
+    // จะเริ่มทำงานเมื่อดึงค่า roomCode จาก Firebase สำเร็จเป็นครั้งแรกเท่านั้น
+    window.checkAutoLoginOnLoad();
 });
+
+window.checkAutoLoginOnLoad = () => {
+    const loginStatus = localStorage.getItem('tallyLoginStatus');
+    const savedRole = localStorage.getItem('tallyLoginRole');
+
+    // ตรวจสอบเงื่อนไขว่าในเครื่องบันทึกว่าเคย Login สำเร็จไว้หรือไม่
+    if (loginStatus === 'loggedin' && savedRole) {
+        state.currentRole = savedRole;
+        window.unlockApplication();
+    }
+};
 
 // ==========================================
 // 🌟 🛠️ 3. Custom Popup Engine
@@ -466,7 +501,6 @@ window.processSaveCurrentRoundToHistory = () => {
         if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = t.name; summaryMap[key].lastTime = t.id; }
         if(t.type === 'rename') return;
         
-        // ✅ ปรับปรุงจุดนี้: ป้องกันค่า NaN ยามคำนวณยอด
         const amt = t.amount ? parseInt(t.amount) : 0;
         if(isNaN(amt)) return;
 
@@ -479,7 +513,6 @@ window.processSaveCurrentRoundToHistory = () => {
         }
     });
 
-    // ✅ ดักจับท้ายสุด ถ้าคำนวณเสร็จแล้ว total ดันยังเป็น NaN ให้เปลี่ยนเป็น 0 ทันที กันระบบล่ม
     if (isNaN(total)) total = 0;
 
     let membersLog = Object.keys(summaryMap).map(k => {
