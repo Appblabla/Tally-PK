@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// 🚩 Firebase Configuration (ชุดเดิมของคุณ)
+// 🚩 Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCr9fXfx9m9cQ9_N_VhE3VTLbgdk3ZXRKM",
     authDomain: "tally-pk.firebaseapp.com",
@@ -15,29 +15,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🆔 Device Fingerprint Setup
-const getDeviceFingerprint = () => {
-    const screenWidth = window.screen.width || 0;
-    const screenHeight = window.screen.height || 0;
-    const pixelRatio = window.devicePixelRatio || 1;
-    const ua = navigator.userAgent;
-    
-    let os = "Device";
-    if (/iPhone/i.test(ua)) os = "iPhone";
-    else if (/iPad/i.test(ua)) os = "iPad";
-    else if (/Android/i.test(ua)) os = "Android";
-    else if (/Macintosh/i.test(ua)) os = "Mac";
-    else if (/Windows/i.test(ua)) os = "Windows";
-
-    const hardwareKey = `${os}-${screenWidth}x${screenHeight}-${pixelRatio}`;
-    return hardwareKey;
-};
-
+// 🆔 Device ID Setup
 if (!localStorage.getItem('myDeviceID')) {
     localStorage.setItem('myDeviceID', 'dev-' + Date.now() + Math.random().toString(36).substr(2, 5));
 }
 const myDeviceID = localStorage.getItem('myDeviceID');
-const hardwareFingerprint = getDeviceFingerprint();
 
 const getDeviceInfo = () => {
     const ua = navigator.userAgent;
@@ -48,11 +30,7 @@ const getDeviceInfo = () => {
         if (match) return match[2].length > 20 ? "Android" : match[2]; 
         return "Android";
     }
-    if (/Macintosh/i.test(ua)) {
-        if (/Chrome/i.test(ua) && !/Chromium/i.test(ua)) return "Mac (Chrome)";
-        if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "Mac (Safari)";
-        return "Mac";
-    }
+    if (/Macintosh/i.test(ua)) return "Mac";
     if (/Windows/i.test(ua)) return "Windows PC";
     return "Device";
 };
@@ -80,6 +58,8 @@ window.switchLoginRole = (role) => {
 window.submitAdminLogin = () => {
     if(document.getElementById('adminPasswordInput').value === '1401') { 
         state.currentRole = 'admin';
+        localStorage.setItem('tallyLoginStatus', 'loggedin');
+        localStorage.setItem('tallyLoginRole', 'admin');
         window.unlockApplication();
     } else {
         window.showCustomAlert("icon-error", "สิทธิ์การเข้าถึง", "รหัสผ่านไม่ถูกต้อง");
@@ -89,6 +69,8 @@ window.submitAdminLogin = () => {
 window.submitMemberLogin = () => {
     if(document.getElementById('roomCodeInput').value === state.roomCode) {
         state.currentRole = 'member';
+        localStorage.setItem('tallyLoginStatus', 'loggedin');
+        localStorage.setItem('tallyLoginRole', 'member');
         window.unlockApplication();
     } else {
         window.showCustomAlert("icon-error", "ระบุเลขห้อง", "เลขห้องไม่ถูกต้อง ไม่สามารถเข้าถึงห้องนี้ได้!");
@@ -122,10 +104,32 @@ window.unlockApplication = () => {
 };
 
 window.forceLockApplication = () => {
+    // 🧹 1. เคลียร์สถานะ Login ทั้งหมดออกจากหน่วยความจำเครื่องบราวเซอร์อย่างเด็ดขาด
+    localStorage.removeItem('tallyLoginStatus');
+    localStorage.removeItem('tallyLoginRole');
+    localStorage.removeItem('myTallyName'); 
+    localStorage.removeItem('pre_rename_hold');
+
+    // 🧹 2. รีเซ็ตตัวแปร State ในแรมให้กลับไปจุดเริ่มต้น (เพื่อล้างประวัติธุรกรรมค้าง)
+    state.currentRole = 'member';
+    state.currentMode = null;
+    state.transactions = [];
+
+    // 🧹 3. ดึงกล่อง Overlay ล็อกอินกลับขึ้นมาแสดงผลสวมทับหน้าจอปกติ
     document.getElementById('login-overlay').style.display = 'flex';
     document.getElementById('main-app').style.setProperty('display', 'none', 'important');
+    
+    // 🧹 4. ล้างตัวหนังสือที่ค้างอยู่ใน Input กล่องกรอกข้อมูลทุกชิ้นให้ว่างเปล่า
     document.getElementById('roomCodeInput').value = '';
     document.getElementById('adminPasswordInput').value = '';
+    
+    const nameInput = document.getElementById('userName');
+    if (nameInput) {
+        nameInput.value = '';
+        nameInput.disabled = false;
+    }
+    
+    // 🧹 5. สั่งปิดบานพับหน้าต่าง Log ประวัติที่อาจเปิดค้างอยู่
     window.closeDetachedLogView();
 };
 
@@ -134,8 +138,6 @@ window.forceLockApplication = () => {
 // ==========================================
 onValue(ref(db, 'transactions'), (snapshot) => {
     const data = snapshot.val();
-    // เก็บค่าดิบเป็น Object ชิ้นๆ ไว้เผื่อสั่งอัปเดตแบบราย Key
-    state.rawTransactions = data ? data : {};
     state.transactions = data ? Object.values(data) : [];
     window.updateApplicationUI();
 });
@@ -153,18 +155,41 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
         if(data.roomCode && data.roomCode !== state.roomCode) {
             state.roomCode = data.roomCode;
             document.getElementById('roomCodeDisplay').innerText = state.roomCode;
+            
+            if(localStorage.getItem('tallyLoginStatus') === 'loggedin') {
+                const lastEnteredRoom = document.getElementById('roomCodeInput').value;
+                if(lastEnteredRoom && lastEnteredRoom !== state.roomCode) {
+                     window.forceLockApplication();
+                     return; // 🛑 หลุดออกจากฟังก์ชันทันทีเพื่อไม่ให้วิ่งลงไปสั่งออโต้ล็อกอินด้านล่าง
+                }
+            }
         }
         
-        if(data.isResetting && state.currentRole === 'member' && document.getElementById('login-overlay').style.display === 'none') {
+        // ✨ ปรับปรุง: ดีดทุกคน (ทั้ง Member และ Admin) ออกจากระบบทันทีแบบล้างฟอร์มเคลียร์แคชสะอาด
+        if(data.isResetting && document.getElementById('login-overlay').style.display === 'none') {
             window.showCustomAlert(
                 "icon-confirm", 
-                "ห้องโดน Reset", 
-                "Admin ได้ทำการ Reset ห้องเรียบร้อยแล้ว! กรุณากรอกเลขห้องใหม่เพื่อเข้าใช้งานในรอบถัดไป", 
+                "ห้องถูก Reset", 
+                "Admin ได้ทำการ Reset ห้องเรียบร้อยแล้ว! กรุณากรอกเลขห้องชุดใหม่เพื่อเข้าใช้งานในรอบถัดไป", 
                 () => { window.forceLockApplication(); }
             );
+            return; // 🛑 หลุดออกจากฟังก์ชันทันทีเพื่อไม่ให้วิ่งลงไปสั่งออโต้ล็อกอินด้านล่าง
         }
     }
+    
+    // จะรันบรรทัดนี้ได้แปลว่าเปิดหน้าเว็บขึ้นมาแบบปกติ โดยไม่ได้มีคำสั่งดีด/รีเซ็ตใดๆ ค้างอยู่
+    window.checkAutoLoginOnLoad();
 });
+
+window.checkAutoLoginOnLoad = () => {
+    const loginStatus = localStorage.getItem('tallyLoginStatus');
+    const savedRole = localStorage.getItem('tallyLoginRole');
+
+    if (loginStatus === 'loggedin' && savedRole) {
+        state.currentRole = savedRole;
+        window.unlockApplication();
+    }
+};
 
 // ==========================================
 // 🌟 🛠️ 3. Custom Popup Engine
@@ -236,36 +261,20 @@ window.toggleNameState = () => {
             return nameInput.focus();
         }
 
-        const oldName = localStorage.getItem('pre_rename_hold') || localStorage.getItem('myTallyName');
-        
-        if (oldName && oldName !== newName && oldName.trim() !== "") {
-            // ✅ ฟีเจอร์อัปเกรดระบบเปลี่ยนชื่อ: วิ่งไปแก้ข้อมูลเก่าบน Firebase ทั้งหมดของเครื่องนี้ให้กลายเป็นชื่อใหม่ทันที ชื่อเดิมจะได้หลุดว่างให้คนอื่นใช้ได้
-            const updates = {};
-            if (state.rawTransactions) {
-                Object.keys(state.rawTransactions).forEach(key => {
-                    const tx = state.rawTransactions[key];
-                    // หาเฉพาะรายการที่เป็นของเครื่องเรา (เช็กจาก Device ID หรือ Hardware Fingerprint)
-                    if (tx.deviceId === myDeviceID || tx.fingerprint === hardwareFingerprint) {
-                        updates[`transactions/${key}/name`] = newName;
-                    }
-                });
-            }
+        // 🛡️ ปรับปรุง: ตรวจสอบระบบชื่อซ้ำ หรือการดึง ID อุปกรณ์ของคนเก่ากลับมาคืนให้
+        if (!window.syncDeviceWithExistingName(newName)) {
+            return nameInput.focus(); 
+        }
 
-            // เพิ่มรายการประวัติการเปลี่ยนชื่อเข้าไปในระบบ
+        const oldName = localStorage.getItem('pre_rename_hold') || localStorage.getItem('myTallyName');
+        if (oldName && oldName !== newName && oldName.trim() !== "") {
             const renameTx = {
-                id: Date.now(), 
-                deviceId: myDeviceID,
-                fingerprint: hardwareFingerprint,
+                id: Date.now(), deviceId: localStorage.getItem('myDeviceID'),
                 time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
                 name: newName, type: 'rename', oldName: oldName, device: getDeviceInfo()
             };
-            
-            // ใช้คำสั่ง update ก้อนใหญ่เพื่อสลับชื่อเก่าทั้งหมดบน Firebase รวดเดียวจบ
-            update(ref(db), updates).then(() => {
-                push(ref(db, 'transactions'), renameTx);
-            });
+            push(ref(db, 'transactions'), renameTx); 
         }
-        
         localStorage.setItem('myTallyName', newName);
         localStorage.removeItem('pre_rename_hold'); 
         nameInput.disabled = true;
@@ -334,6 +343,11 @@ window.executeSaveEntry = (amount) => {
         return nameInput.focus();
     }
     
+    // 🛡️ ปรับปรุง: บล็อกคนชื่อซ้ำที่แอบเนียนพิมพ์ชื่อคนอื่นแล้วกดกระโดดข้ามมาคลิกเบิก/คืนทันที
+    if (!window.syncDeviceWithExistingName(currentInputValue)) {
+        return nameInput.focus();
+    }
+    
     const savedOldName = localStorage.getItem('myTallyName');
     let calculatedRenameNote = (savedOldName && savedOldName !== currentInputValue && savedOldName.trim() !== "") ? `Changed from ${savedOldName}` : null;
     
@@ -343,14 +357,52 @@ window.executeSaveEntry = (amount) => {
     window.setButtonToEditMode();
 
     const newTx = {
-        id: Date.now(), 
-        deviceId: myDeviceID, 
-        fingerprint: hardwareFingerprint, 
+        id: Date.now(), deviceId: localStorage.getItem('myDeviceID'), 
         time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
         name: currentInputValue, type: state.currentMode,
         amount: Math.abs(parseInt(amount)), device: getDeviceInfo(), renameNote: calculatedRenameNote 
     };
     push(ref(db, 'transactions'), newTx); 
+};
+
+// 🛡️ ฟังก์ชันแก้วิกฤตเคลียร์เบราว์เซอร์ + บล็อกคนชื่อซ้ำแบบมีตรรกะตรวจเช็คสิทธิ์ซ้อน
+window.syncDeviceWithExistingName = (inputName) => {
+    if (!state.transactions || state.transactions.length === 0) return true;
+
+    const currentLocalDeviceID = localStorage.getItem('myDeviceID');
+    const cleanInputName = inputName.trim();
+
+    // ค้นหาประวัติธุรกรรมในห้องปัจจุบันที่มีการใช้ชื่อตรงกับข้อความที่พิมพ์
+    const existingTx = state.transactions.find(t => t.name && t.name.trim() === cleanInputName);
+
+    if (existingTx) {
+        // เคส A: เป็นคนเก่า บนเบราว์เซอร์เครื่องเดิม ไม่ติดปัญหา -> อนุญาตให้ผ่าน
+        if (existingTx.deviceId === currentLocalDeviceID) {
+            return true;
+        }
+        
+        // เคส B: มีชื่อนี้ในฐานข้อมูลอยู่แล้ว แต่ตัวแอปในเบราว์เซอร์นี้ไม่มีประวัติสอดคล้อง
+        // ตรวจสอบเช็คดูว่า เบราว์เซอร์เครื่องนี้เคยลงทะเบียนสิทธิ์ใช้ชื่ออื่นไปแล้วหรือยังในรอบนี้
+        const hasAnyHistoryInThisRound = state.transactions.some(t => t.deviceId === currentLocalDeviceID);
+
+        if (!hasAnyHistoryInThisRound) {
+            // สันนิษฐานว่าเป็นคนเดิมที่เพิ่งล้างแคชมา หรือเปลี่ยนแอปสลับมาเปิดในไลน์ เพราะเบราว์เซอร์นี้ยังไม่มีประวัติในห้องเลย
+            // ระบบจะยินยอมดึงรหัสอุปกรณ์ตัวดั้งเดิมที่ติดอยู่กับชื่อใน Firebase กลับคืนเครื่องให้ทันที เพื่อรวมยอดกลับมาเป็นคนเดียวกัน
+            localStorage.setItem('myDeviceID', existingTx.deviceId);
+            console.log(`[Sync Device] พบประวัติเดิมของชื่อ "${cleanInputName}" ทำการผูกอุปกรณ์เข้ากับ ID เก่าสำเร็จ`);
+            return true;
+        } else {
+            // สั่งบล็อกทันที: เนื่องจากเบราว์เซอร์นี้มีสิทธิ์ชื่ออื่นใช้งานอยู่แล้ว แต่อยู่ดีๆ จะมาพิมพ์ชื่อซ้ำกับบุคคลอื่นในวง
+            window.showCustomAlert(
+                "icon-error", 
+                "ชื่อซ้ำในระบบ", 
+                `ชื่อ "${cleanInputName}" มีผู้ใช้งานคนอื่นในห้องนี้ใช้ไปแล้วครับ รบกวนตั้งชื่ออื่น หรือเติมสัญลักษณ์ท้ายชื่อให้ต่างกันนิดนึงน้า`
+            );
+            return false;
+        }
+    }
+
+    return true; // ไม่มีรายชื่อทับซ้อน ปล่อยผ่านฉลุย
 };
 
 // ==========================================
@@ -367,7 +419,7 @@ window.updateApplicationUI = () => {
             }
             const isW = t.type === 'withdraw';
             const currentAmount = t.amount ? t.amount : 0;
-            return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td><strong>${t.name}</strong> <span style="font-size:0.75rem; color:var(--text-sub); font-weight:normal;">(${t.device})</span></td><td class="${isW ? 't-red' : 't-green'}">${isW ? '-' : '+'}${currentAmount.toLocaleString()}</td><td>${currentAmount / 200} ขีด</td></tr>`;
+            return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td><strong>${t.name} - ${t.device}</strong>${t.renameNote ? `<br><small class="rename-note"><i class="fa-solid fa-clock-rotate-left"></i> ${t.renameNote}</small>` : ''}</td><td class="${isW ? 't-red' : 't-green'}">${isW ? '-' : '+'}${currentAmount.toLocaleString()}</td><td>${currentAmount / 200} ขีด</td></tr>`;
         }).join('');
     }
 
@@ -376,19 +428,11 @@ window.updateApplicationUI = () => {
     
     if (state.transactions) {
         state.transactions.forEach(t => {
-            if(!t.name || t.type === 'rename') return;
+            const key = t.name ? t.name.trim() : 'Unknown';
             
-            const cleanName = t.name.trim().toLowerCase();
-            const machineKey = t.fingerprint ? t.fingerprint : (t.deviceId || 'unknown');
-            const key = `${machineKey}_${cleanName}`;
-            
-            if(!summaryMap[key]) {
-                summaryMap[key] = { name: t.name.trim(), withdraw: 0, return: 0, lastTime: t.id };
-            }
-            if(t.id >= summaryMap[key].lastTime) { 
-                summaryMap[key].name = t.name.trim(); 
-                summaryMap[key].lastTime = t.id; 
-            }
+            if(!summaryMap[key]) summaryMap[key] = { name: key, withdraw: 0, return: 0, lastTime: t.id };
+            if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = key; summaryMap[key].lastTime = t.id; }
+            if(t.type === 'rename') return;
             
             const amt = t.amount ? parseInt(t.amount) : 0;
             if(isNaN(amt)) return;
@@ -506,9 +550,11 @@ window.executeResetRoomActionComplete = () => {
     }
     const newCode = Math.floor(1000 + Math.random() * 9000).toString(); 
     
+    // ตั้งค่าตัวแปรเป็น true เพื่อดีดทุกคนออกพร้อมกันก่อน
     update(ref(db, 'systemConfig'), { roomCode: newCode, isResetting: true }).then(() => {
-        setTimeout(() => update(ref(db, 'systemConfig'), { isResetting: false }), 5000); 
-        window.showCustomAlert("icon-success", "Reset สำเร็จ", `ระบบทำการจบรอบ ล้างรายการ และสุ่มรหัสห้องใหม่เรียบร้อย! รหัสห้องถัดไปคือ: ${newCode}`);
+        setTimeout(() => {
+            update(ref(db, 'systemConfig'), { isResetting: false });
+        }, 3000); 
     });
 };
 
@@ -517,19 +563,11 @@ window.processSaveCurrentRoundToHistory = () => {
     let summaryMap = {};
     
     state.transactions.forEach(t => {
-        if(!t.name || t.type === 'rename') return;
+        const key = t.name ? t.name.trim() : 'Unknown';
         
-        const cleanName = t.name.trim().toLowerCase();
-        const machineKey = t.fingerprint ? t.fingerprint : (t.deviceId || 'unknown');
-        const key = `${machineKey}_${cleanName}`;
-        
-        if(!summaryMap[key]) {
-            summaryMap[key] = { name: t.name.trim(), withdraw: 0, return: 0, lastTime: t.id };
-        }
-        if(t.id >= summaryMap[key].lastTime) { 
-            summaryMap[key].name = t.name.trim(); 
-            summaryMap[key].lastTime = t.id; 
-        }
+        if(!summaryMap[key]) summaryMap[key] = { name: key, withdraw: 0, return: 0, lastTime: t.id };
+        if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = key; summaryMap[key].lastTime = t.id; }
+        if(t.type === 'rename') return;
         
         const amt = t.amount ? parseInt(t.amount) : 0;
         if(isNaN(amt)) return;
