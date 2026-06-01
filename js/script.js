@@ -319,7 +319,8 @@ window.updateApplicationUI = () => {
                 return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td colspan="3"><span class="rename-log-text"><i class="fa-solid fa-clock-rotate-left"></i> 👤 ${t.oldName} เปลี่ยนชื่อเป็น <strong>${t.name}</strong> (${t.device})</span></td></tr>`;
             }
             const isW = t.type === 'withdraw';
-            return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td><strong>${t.name} - ${t.device}</strong>${t.renameNote ? `<br><small class="rename-note"><i class="fa-solid fa-clock-rotate-left"></i> ${t.renameNote}</small>` : ''}</td><td class="${isW ? 't-red' : 't-green'}">${isW ? '-' : '+'}${t.amount.toLocaleString()}</td><td>${t.amount / 200} ขีด</td></tr>`;
+            const currentAmount = t.amount ? t.amount : 0;
+            return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td><strong>${t.name} - ${t.device}</strong>${t.renameNote ? `<br><small class="rename-note"><i class="fa-solid fa-clock-rotate-left"></i> ${t.renameNote}</small>` : ''}</td><td class="${isW ? 't-red' : 't-green'}">${isW ? '-' : '+'}${currentAmount.toLocaleString()}</td><td>${currentAmount / 200} ขีด</td></tr>`;
         }).join('');
     }
 
@@ -332,8 +333,12 @@ window.updateApplicationUI = () => {
             if(!summaryMap[key]) summaryMap[key] = { name: t.name, withdraw: 0, return: 0, lastTime: t.id };
             if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = t.name; summaryMap[key].lastTime = t.id; }
             if(t.type === 'rename') return;
-            if(t.type === 'withdraw') { grandTotal -= t.amount; summaryMap[key].withdraw += t.amount; }
-            else { grandTotal += t.amount; summaryMap[key].return += t.amount; }
+            
+            const amt = t.amount ? parseInt(t.amount) : 0;
+            if(isNaN(amt)) return;
+
+            if(t.type === 'withdraw') { grandTotal -= amt; summaryMap[key].withdraw += amt; }
+            else { grandTotal += amt; summaryMap[key].return += amt; }
         });
     }
 
@@ -383,24 +388,27 @@ window.buildLogHtmlStructure = (filterDate, containerElement) => {
     }
 
     containerElement.innerHTML = listToRender.map(s => {
-        // ✅ ปรับปรุงจุดนี้เพื่อดักบั๊ค: ถ้า members เป็น undefined/null ให้ใช้ค่าตั้งต้นเป็น Array ว่าง [] เสมอ หน้าเว็บจะได้ไม่ค้าง
         const currentMembers = s.members ? s.members : [];
+        const displayTotal = s.total ? s.total : 0;
 
         return `
             <div class="log-card-original">
                 <div class="log-header-original">🕒 จบเมื่อ: ${s.date}</div>
-                <div style="font-weight: 800; font-size: 1.1rem; color: ${s.total >= 0 ? 'var(--return)' : 'var(--withdraw)'}">
-                    ยอดสุทธิรอบนี้: ${s.total >= 0 ? '+' : ''}${s.total.toLocaleString()} ฿
+                <div style="font-weight: 800; font-size: 1.1rem; color: ${displayTotal >= 0 ? 'var(--return)' : 'var(--withdraw)'}">
+                    ยอดสุทธิรอบนี้: ${displayTotal >= 0 ? '+' : ''}${displayTotal.toLocaleString()} ฿
                 </div>
                 <div class="log-grid-container">
-                    ${currentMembers.map(m => `
-                        <div class="log-grid-item">
-                            <span>${m.name}:</span>
-                            <span style="color: ${m.amount >= 0 ? 'var(--return)' : 'var(--withdraw)'}">
-                                ${m.amount >= 0 ? '+' : ''}${m.amount.toLocaleString()}
-                            </span>
-                        </div>
-                    `).join('')}
+                    ${currentMembers.map(m => {
+                        const memAmount = m.amount ? m.amount : 0;
+                        return `
+                            <div class="log-grid-item">
+                                <span>${m.name}:</span>
+                                <span style="color: ${memAmount >= 0 ? 'var(--return)' : 'var(--withdraw)'}">
+                                    ${memAmount >= 0 ? '+' : ''}${memAmount.toLocaleString()}
+                                </span>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;
@@ -449,7 +457,7 @@ window.executeResetRoomActionComplete = () => {
 };
 
 window.processSaveCurrentRoundToHistory = () => {
-    let total = state.transactions.reduce((s, t) => s + (t.type === 'withdraw' ? -t.amount : t.amount), 0);
+    let total = 0;
     let summaryMap = {};
     
     state.transactions.forEach(t => {
@@ -457,11 +465,31 @@ window.processSaveCurrentRoundToHistory = () => {
         if(!summaryMap[key]) summaryMap[key] = { name: t.name, withdraw: 0, return: 0, lastTime: t.id };
         if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = t.name; summaryMap[key].lastTime = t.id; }
         if(t.type === 'rename') return;
-        if(t.type === 'withdraw') summaryMap[key].withdraw += t.amount;
-        else summaryMap[key].return += t.amount;
+        
+        // ✅ ปรับปรุงจุดนี้: ป้องกันค่า NaN ยามคำนวณยอด
+        const amt = t.amount ? parseInt(t.amount) : 0;
+        if(isNaN(amt)) return;
+
+        if(t.type === 'withdraw') {
+            total -= amt;
+            summaryMap[key].withdraw += amt;
+        } else {
+            total += amt;
+            summaryMap[key].return += amt;
+        }
     });
 
-    let membersLog = Object.keys(summaryMap).map(k => ({ name: summaryMap[k].name, amount: summaryMap[k].return - summaryMap[k].withdraw }));
+    // ✅ ดักจับท้ายสุด ถ้าคำนวณเสร็จแล้ว total ดันยังเป็น NaN ให้เปลี่ยนเป็น 0 ทันที กันระบบล่ม
+    if (isNaN(total)) total = 0;
+
+    let membersLog = Object.keys(summaryMap).map(k => {
+        const netAmount = summaryMap[k].return - summaryMap[k].withdraw;
+        return { 
+            name: summaryMap[k].name, 
+            amount: isNaN(netAmount) ? 0 : netAmount 
+        };
+    });
+    
     const now = new Date();
     
     push(ref(db, 'sessions'), {
