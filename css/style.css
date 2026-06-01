@@ -82,11 +82,11 @@ body { font-family: 'Sarabun', sans-serif; background-color: var(--bg); color: v
 .action-inline-row .main-input { flex: 1; }
 .action-inline-row .btn-inline-submit { width: auto; flex: 1; white-space: nowrap; }
 
-.action-toggle { display: flex; gap: 10px; margin-bottom: 20px; }
-.toggle-btn { flex: 1; padding: 14px; border: 2px solid var(--border); border-radius: 12px; background: white; font-size: 1rem; font-weight: bold; cursor: pointer; color: var(--text-sub); }
+.action-toggle { display: flex; gap: 10px; margin-bottom: 14px; }
+.toggle-btn { flex: 1; padding: 14px; border: 2px solid var(--border); border-radius: 8px; background: white; font-size: 1rem; font-weight: bold; cursor: pointer; color: var(--text-sub); }
 .toggle-btn.active { border-color: var(--primary-start); background: #eef2ff; color: var(--primary-start); }
 
-.btn-submit { width: 100%; padding: 14px; border: none; border-radius: 14px; font-size: 1rem; font-weight: bold; color: white; cursor: pointer; box-shadow: var(--shadow); transition: transform 0.1s; }
+.btn-submit { width: 100%; padding: 16px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; color: white; cursor: pointer; box-shadow: var(--shadow); transition: transform 0.1s; }
 .btn-withdraw { background: var(--withdraw); }
 .btn-return { background: var(--return); }
 
@@ -135,7 +135,7 @@ body { font-family: 'Sarabun', sans-serif; background-color: var(--bg); color: v
 .custom-popup-title { font-size: 1.15rem; font-weight: bold; color: var(--text-main); margin: 0 0 10px; }
 .custom-popup-msg { font-size: 0.95rem; color: var(--text-sub); line-height: 1.5; margin: 0 0 20px; }
 .custom-popup-btn-group { display: flex; gap: 10px; justify-content: center; }
-.custom-popup-btn { flex: 1; padding: 14px; border: none; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.custom-popup-btn { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
 .custom-popup-btn-ok { background: var(--primary-start); color: white; }
 .custom-popup-btn-cancel { background: #f1f5f9; color: var(--text-sub); }
 .custom-popup-btn-danger { background: var(--withdraw); color: white; }
