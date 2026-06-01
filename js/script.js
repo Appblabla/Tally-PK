@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// 🚩 Firebase Configuration (ชุดเดิมของคุณ)
+// 🚩 Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCr9fXfx9m9cQ9_N_VhE3VTLbgdk3ZXRKM",
     authDomain: "tally-pk.firebaseapp.com",
@@ -15,31 +15,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🆔 Device Fingerprint Setup (สร้าง ID จากฮาร์ดแวร์เครื่อง เพื่อให้ข้ามเบราว์เซอร์แล้วได้คีย์เดิม)
-const getDeviceFingerprint = () => {
-    const screenWidth = window.screen.width || 0;
-    const screenHeight = window.screen.height || 0;
-    const pixelRatio = window.devicePixelRatio || 1;
-    const ua = navigator.userAgent;
-    
-    let os = "Device";
-    if (/iPhone/i.test(ua)) os = "iPhone";
-    else if (/iPad/i.test(ua)) os = "iPad";
-    else if (/Android/i.test(ua)) {
-        os = "Android";
-    }
-    else if (/Macintosh/i.test(ua)) os = "Mac";
-    else if (/Windows/i.test(ua)) os = "Windows";
-
-    const hardwareKey = `${os}-${screenWidth}x${screenHeight}-${pixelRatio}`;
-    return hardwareKey;
-};
-
+// 🆔 Device ID Setup
 if (!localStorage.getItem('myDeviceID')) {
     localStorage.setItem('myDeviceID', 'dev-' + Date.now() + Math.random().toString(36).substr(2, 5));
 }
 const myDeviceID = localStorage.getItem('myDeviceID');
-const hardwareFingerprint = getDeviceFingerprint();
 
 const getDeviceInfo = () => {
     const ua = navigator.userAgent;
@@ -50,11 +30,7 @@ const getDeviceInfo = () => {
         if (match) return match[2].length > 20 ? "Android" : match[2]; 
         return "Android";
     }
-    if (/Macintosh/i.test(ua)) {
-        if (/Chrome/i.test(ua) && !/Chromium/i.test(ua)) return "Mac (Chrome)";
-        if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "Mac (Safari)";
-        return "Mac";
-    }
+    if (/Macintosh/i.test(ua)) return "Mac";
     if (/Windows/i.test(ua)) return "Windows PC";
     return "Device";
 };
@@ -82,6 +58,8 @@ window.switchLoginRole = (role) => {
 window.submitAdminLogin = () => {
     if(document.getElementById('adminPasswordInput').value === '1401') { 
         state.currentRole = 'admin';
+        localStorage.setItem('tallyLoginStatus', 'loggedin');
+        localStorage.setItem('tallyLoginRole', 'admin');
         window.unlockApplication();
     } else {
         window.showCustomAlert("icon-error", "สิทธิ์การเข้าถึง", "รหัสผ่านไม่ถูกต้อง");
@@ -91,6 +69,8 @@ window.submitAdminLogin = () => {
 window.submitMemberLogin = () => {
     if(document.getElementById('roomCodeInput').value === state.roomCode) {
         state.currentRole = 'member';
+        localStorage.setItem('tallyLoginStatus', 'loggedin');
+        localStorage.setItem('tallyLoginRole', 'member');
         window.unlockApplication();
     } else {
         window.showCustomAlert("icon-error", "ระบุเลขห้อง", "เลขห้องไม่ถูกต้อง ไม่สามารถเข้าถึงห้องนี้ได้!");
@@ -124,6 +104,9 @@ window.unlockApplication = () => {
 };
 
 window.forceLockApplication = () => {
+    localStorage.removeItem('tallyLoginStatus');
+    localStorage.removeItem('tallyLoginRole');
+
     document.getElementById('login-overlay').style.display = 'flex';
     document.getElementById('main-app').style.setProperty('display', 'none', 'important');
     document.getElementById('roomCodeInput').value = '';
@@ -153,18 +136,38 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
         if(data.roomCode && data.roomCode !== state.roomCode) {
             state.roomCode = data.roomCode;
             document.getElementById('roomCodeDisplay').innerText = state.roomCode;
+            
+            if(localStorage.getItem('tallyLoginStatus') === 'loggedin') {
+                const lastEnteredRoom = document.getElementById('roomCodeInput').value;
+                if(lastEnteredRoom && lastEnteredRoom !== state.roomCode) {
+                     window.forceLockApplication();
+                }
+            }
         }
         
-        if(data.isResetting && state.currentRole === 'member' && document.getElementById('login-overlay').style.display === 'none') {
+        // ✨ ปรับปรุงจุดนี้: ดีดทุกคน (ทั้ง Member และ Admin) ทันทีเมื่อห้องโดน Reset
+        if(data.isResetting && document.getElementById('login-overlay').style.display === 'none') {
             window.showCustomAlert(
                 "icon-confirm", 
-                "ห้องโดน Reset", 
-                "Admin ได้ทำการ Reset ห้องเรียบร้อยแล้ว! กรุณากรอกเลขห้องใหม่เพื่อเข้าใช้งานในรอบถัดไป", 
+                "ห้องถูก Reset", 
+                "Admin ได้ทำการ Reset ห้องเรียบร้อยแล้ว! กรุณากรอกเลขห้องชุดใหม่เพื่อเข้าใช้งานในรอบถัดไป", 
                 () => { window.forceLockApplication(); }
             );
         }
     }
+    
+    window.checkAutoLoginOnLoad();
 });
+
+window.checkAutoLoginOnLoad = () => {
+    const loginStatus = localStorage.getItem('tallyLoginStatus');
+    const savedRole = localStorage.getItem('tallyLoginRole');
+
+    if (loginStatus === 'loggedin' && savedRole) {
+        state.currentRole = savedRole;
+        window.unlockApplication();
+    }
+};
 
 // ==========================================
 // 🌟 🛠️ 3. Custom Popup Engine
@@ -236,12 +239,15 @@ window.toggleNameState = () => {
             return nameInput.focus();
         }
 
+        // 🛡️ ปรับปรุงจุดนี้: ตรวจสอบสิทธิ์ชื่อซ้ำ / ดักเคสย้าย Browser
+        if (!window.syncDeviceWithExistingName(newName)) {
+            return nameInput.focus(); 
+        }
+
         const oldName = localStorage.getItem('pre_rename_hold') || localStorage.getItem('myTallyName');
         if (oldName && oldName !== newName && oldName.trim() !== "") {
             const renameTx = {
-                id: Date.now(), 
-                deviceId: myDeviceID,
-                fingerprint: hardwareFingerprint,
+                id: Date.now(), deviceId: localStorage.getItem('myDeviceID'),
                 time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
                 name: newName, type: 'rename', oldName: oldName, device: getDeviceInfo()
             };
@@ -315,6 +321,11 @@ window.executeSaveEntry = (amount) => {
         return nameInput.focus();
     }
     
+    // 🛡️ ปรับปรุงจุดนี้: บล็อกกรณีที่ผู้ใช้พยายามพิมพ์ชื่อคนอื่นซ้ำแล้วกดปุ่มทำรายการทันที
+    if (!window.syncDeviceWithExistingName(currentInputValue)) {
+        return nameInput.focus();
+    }
+    
     const savedOldName = localStorage.getItem('myTallyName');
     let calculatedRenameNote = (savedOldName && savedOldName !== currentInputValue && savedOldName.trim() !== "") ? `Changed from ${savedOldName}` : null;
     
@@ -324,14 +335,52 @@ window.executeSaveEntry = (amount) => {
     window.setButtonToEditMode();
 
     const newTx = {
-        id: Date.now(), 
-        deviceId: myDeviceID, 
-        fingerprint: hardwareFingerprint, 
+        id: Date.now(), deviceId: localStorage.getItem('myDeviceID'), 
         time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
         name: currentInputValue, type: state.currentMode,
         amount: Math.abs(parseInt(amount)), device: getDeviceInfo(), renameNote: calculatedRenameNote 
     };
     push(ref(db, 'transactions'), newTx); 
+};
+
+// 🛡️ ฟังก์ชันแก้วิกฤตเคลียร์เบราว์เซอร์ + บล็อกคนชื่อซ้ำในรอบปัจจุบัน
+window.syncDeviceWithExistingName = (inputName) => {
+    if (!state.transactions || state.transactions.length === 0) return true;
+
+    const currentLocalDeviceID = localStorage.getItem('myDeviceID');
+    const cleanInputName = inputName.trim();
+
+    // ค้นหาธุรกรรมใน Firebase ที่ตรงกับชื่อที่ป้อนเข้ามา
+    const existingTx = state.transactions.find(t => t.name && t.name.trim() === cleanInputName);
+
+    if (existingTx) {
+        // เคส A: เป็นคนเดิม เบราว์เซอร์เดิม อุปกรณ์เดิม -> อนุญาต
+        if (existingTx.deviceId === currentLocalDeviceID) {
+            return true;
+        }
+        
+        // เคส B: มีชื่อนี้ใน Firebase อยู่แล้ว แต่ Device ID ในเครื่องไม่ตรงกัน
+        // ตรวจสอบว่าเบราว์เซอร์ตัวนี้เคยทำรายการอื่นไปแล้วหรือยังในรอบนี้
+        const hasAnyHistoryInThisRound = state.transactions.some(t => t.deviceId === currentLocalDeviceID);
+
+        if (!hasAnyHistoryInThisRound) {
+            // สันนิษฐานว่าเป็นคนเดิมที่เพิ่งล้างแคชมา หรือเปิดจากแอปอื่น (เช่น LINE) เพราะยังไม่มีประวัติในห้องเลย
+            // ทำการสวมรอยใช้ Device ID ตัวเก่าที่ติดมากับชื่อใน Firebase ทันที
+            localStorage.setItem('myDeviceID', existingTx.deviceId);
+            console.log(`[Sync Device] พบประวัติเดิมของชื่อ "${cleanInputName}" ทำการผูกอุปกรณ์เข้ากับ ID เก่าสำเร็จ`);
+            return true;
+        } else {
+            // บล็อกทันที เพราะเบราว์เซอร์เครื่องนี้มีตัวตนอื่นอยู่แล้ว แต่อยู่ดีๆ จะมาตั้งชื่อซ้ำกับคนอื่น
+            window.showCustomAlert(
+                "icon-error", 
+                "ชื่อซ้ำในระบบ", 
+                `ชื่อ "${cleanInputName}" มีผู้ใช้งานคนอื่นในห้องนี้ใช้ไปแล้วครับ รบกวนตั้งชื่ออื่น หรือเติมสัญลักษณ์ท้ายชื่อให้ต่างกันนิดนึงน้า`
+            );
+            return false;
+        }
+    }
+
+    return true; // ไม่มีชื่อซ้ำ ผ่านฉลุย
 };
 
 // ==========================================
@@ -348,7 +397,7 @@ window.updateApplicationUI = () => {
             }
             const isW = t.type === 'withdraw';
             const currentAmount = t.amount ? t.amount : 0;
-            return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td><strong>${t.name}</strong> <span style="font-size:0.75rem; color:var(--text-sub); font-weight:normal;">(${t.device})</span></td><td class="${isW ? 't-red' : 't-green'}">${isW ? '-' : '+'}${currentAmount.toLocaleString()}</td><td>${currentAmount / 200} ขีด</td></tr>`;
+            return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td><strong>${t.name} - ${t.device}</strong>${t.renameNote ? `<br><small class="rename-note"><i class="fa-solid fa-clock-rotate-left"></i> ${t.renameNote}</small>` : ''}</td><td class="${isW ? 't-red' : 't-green'}">${isW ? '-' : '+'}${currentAmount.toLocaleString()}</td><td>${currentAmount / 200} ขีด</td></tr>`;
         }).join('');
     }
 
@@ -357,19 +406,11 @@ window.updateApplicationUI = () => {
     
     if (state.transactions) {
         state.transactions.forEach(t => {
-            if(!t.name || t.type === 'rename') return;
+            const key = t.name ? t.name.trim() : 'Unknown';
             
-            const cleanName = t.name.trim().toLowerCase();
-            const machineKey = t.fingerprint ? t.fingerprint : (t.deviceId || 'unknown');
-            const key = `${machineKey}_${cleanName}`;
-            
-            if(!summaryMap[key]) {
-                summaryMap[key] = { name: t.name.trim(), withdraw: 0, return: 0, lastTime: t.id };
-            }
-            if(t.id >= summaryMap[key].lastTime) { 
-                summaryMap[key].name = t.name.trim(); 
-                summaryMap[key].lastTime = t.id; 
-            }
+            if(!summaryMap[key]) summaryMap[key] = { name: key, withdraw: 0, return: 0, lastTime: t.id };
+            if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = key; summaryMap[key].lastTime = t.id; }
+            if(t.type === 'rename') return;
             
             const amt = t.amount ? parseInt(t.amount) : 0;
             if(isNaN(amt)) return;
@@ -487,9 +528,11 @@ window.executeResetRoomActionComplete = () => {
     }
     const newCode = Math.floor(1000 + Math.random() * 9000).toString(); 
     
+    // ✨ ปรับปรุงจุดนี้: บันทึกเลขห้องใหม่ และปรับสถานะเป็น True เพื่อกระจายคำสั่งดีดทุกคนออกทันที
     update(ref(db, 'systemConfig'), { roomCode: newCode, isResetting: true }).then(() => {
-        setTimeout(() => update(ref(db, 'systemConfig'), { isResetting: false }), 5000); 
-        window.showCustomAlert("icon-success", "Reset สำเร็จ", `ระบบทำการจบรอบ ล้างรายการ และสุ่มรหัสห้องใหม่เรียบร้อย! รหัสห้องถัดไปคือ: ${newCode}`);
+        setTimeout(() => {
+            update(ref(db, 'systemConfig'), { isResetting: false });
+        }, 3000); 
     });
 };
 
@@ -498,19 +541,11 @@ window.processSaveCurrentRoundToHistory = () => {
     let summaryMap = {};
     
     state.transactions.forEach(t => {
-        if(!t.name || t.type === 'rename') return;
+        const key = t.name ? t.name.trim() : 'Unknown';
         
-        const cleanName = t.name.trim().toLowerCase();
-        const machineKey = t.fingerprint ? t.fingerprint : (t.deviceId || 'unknown');
-        const key = `${machineKey}_${cleanName}`;
-        
-        if(!summaryMap[key]) {
-            summaryMap[key] = { name: t.name.trim(), withdraw: 0, return: 0, lastTime: t.id };
-        }
-        if(t.id >= summaryMap[key].lastTime) { 
-            summaryMap[key].name = t.name.trim(); 
-            summaryMap[key].lastTime = t.id; 
-        }
+        if(!summaryMap[key]) summaryMap[key] = { name: key, withdraw: 0, return: 0, lastTime: t.id };
+        if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = key; summaryMap[key].lastTime = t.id; }
+        if(t.type === 'rename') return;
         
         const amt = t.amount ? parseInt(t.amount) : 0;
         if(isNaN(amt)) return;
