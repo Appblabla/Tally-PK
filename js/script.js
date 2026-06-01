@@ -1,3 +1,21 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, push, onValue, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// 🚩 Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCr9fXfx9m9cQ9_N_VhE3VTLbgdk3ZXRKM",
+    authDomain: "tally-pk.firebaseapp.com",
+    databaseURL: "https://tally-pk-default-rtdb.asia-southeast1.firebasedatabase.app/", 
+    projectId: "tally-pk",
+    storageBucket: "tally-pk.firebasestorage.app",
+    messagingSenderId: "849778226457",
+    appId: "1:849778226457:web:6ec1724e76588358f3c188"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 🆔 Device ID Setup
 if (!localStorage.getItem('myDeviceID')) {
     localStorage.setItem('myDeviceID', 'dev-' + Date.now() + Math.random().toString(36).substr(2, 5));
 }
@@ -17,6 +35,7 @@ const getDeviceInfo = () => {
     return "Device";
 };
 
+// 🌟 App State
 let state = {
     roomCode: "8492", 
     currentRole: "member",
@@ -25,28 +44,48 @@ let state = {
     sessions: [] 
 };
 
-// 🎯 เช็คข้อมูลเดิม: ถ้ามีข้อมูลเก่าอยู่แล้วให้ดึงมาใช้เลย ข้อมูลจะไม่หาย
-if(localStorage.getItem('mock_db_state_production_v1')) {
-    state = JSON.parse(localStorage.getItem('mock_db_state_production_v1'));
-    state.currentMode = null; 
-} else {
-    // 🎯 ถ้าเป็นเครื่องใหม่เอี่ยม จะเริ่มด้วยค่าว่างๆ (เอาข้อมูลตัวอย่าง Rex, Mod ฯลฯ ออกแล้ว)
-    localStorage.setItem('mock_db_state_production_v1', JSON.stringify(state));
-}
+// --- 🔥 Firebase Listeners (Real-time Sync) ---
 
-setInterval(() => {
-    if (state.currentRole === 'member' && localStorage.getItem('global_reset_signal') === 'triggered') {
-        localStorage.removeItem('global_reset_signal');
-        showCustomAlert(
-            "icon-confirm", 
-            "ห้องโดน Reset", 
-            "Admin ได้ทำการ Reset ห้องเรียบร้อยแล้ว! กรุณากรอกเลขห้องใหม่เพื่อเข้าใช้งานในรอบถัดไป", 
-            () => { forceLockApplication(); }
-        );
+// 1. ดึงรายการเบิกคืน (Transactions)
+onValue(ref(db, 'transactions'), (snapshot) => {
+    const data = snapshot.val();
+    state.transactions = data ? Object.values(data) : [];
+    window.updateApplicationUI();
+});
+
+// 2. ดึงประวัติการจบรอบ (Sessions)
+onValue(ref(db, 'sessions'), (snapshot) => {
+    const data = snapshot.val();
+    state.sessions = data ? Object.values(data).reverse() : [];
+    window.renderApplicationLogs();
+    window.renderDetachedLogContent();
+});
+
+// 3. ระบบดูแลห้องและเตือนโดนดีด
+onValue(ref(db, 'systemConfig'), (snapshot) => {
+    const data = snapshot.val();
+    if(data) {
+        // อัปเดตเลขห้องใหม่
+        if(data.roomCode && data.roomCode !== state.roomCode) {
+            state.roomCode = data.roomCode;
+            document.getElementById('roomCodeDisplay').innerText = state.roomCode;
+        }
+        
+        // ถ้าระบบโดน Reset สั่งดีดคนออก
+        if(data.isResetting && state.currentRole === 'member' && document.getElementById('login-overlay').style.display === 'none') {
+            window.showCustomAlert(
+                "icon-confirm", 
+                "ห้องโดน Reset", 
+                "Admin ได้ทำการ Reset ห้องเรียบร้อยแล้ว! กรุณากรอกเลขห้องใหม่เพื่อเข้าใช้งานในรอบถัดไป", 
+                () => { window.forceLockApplication(); }
+            );
+        }
     }
-}, 1000);
+});
 
-function showCustomAlert(iconClass, title, message, onOkClick = null) {
+
+// 🌟 🛠️ Custom Popup Engine
+window.showCustomAlert = (iconClass, title, message, onOkClick = null) => {
     const overlay = document.getElementById('globalPopupContainer');
     const iconContainer = document.getElementById('popupIcon');
     const titleEl = document.getElementById('popupTitle');
@@ -68,9 +107,9 @@ function showCustomAlert(iconClass, title, message, onOkClick = null) {
         overlay.style.display = 'none';
         if (onOkClick) onOkClick();
     };
-}
+};
 
-function showCustomConfirm(title, message, onConfirmClick) {
+window.showCustomConfirm = (title, message, onConfirmClick) => {
     const overlay = document.getElementById('globalPopupContainer');
     const iconContainer = document.getElementById('popupIcon');
     const titleEl = document.getElementById('popupTitle');
@@ -89,46 +128,42 @@ function showCustomConfirm(title, message, onConfirmClick) {
     `;
     overlay.style.display = 'flex';
 
-    document.getElementById('popupCancelBtn').onclick = () => {
-        overlay.style.display = 'none';
-    };
+    document.getElementById('popupCancelBtn').onclick = () => overlay.style.display = 'none';
     document.getElementById('popupConfirmBtn').onclick = () => {
         overlay.style.display = 'none';
         onConfirmClick();
     };
-}
+};
 
-function saveMockDB() {
-    localStorage.setItem('mock_db_state_production_v1', JSON.stringify(state));
-}
 
-function switchLoginRole(role) {
+// 🔒 Security & Navigation
+window.switchLoginRole = (role) => {
     document.getElementById('roleMember').classList.toggle('active', role === 'member');
     document.getElementById('roleAdmin').classList.toggle('active', role === 'admin');
     document.getElementById('member-form').style.display = role === 'member' ? 'block' : 'none';
     document.getElementById('admin-form').style.display = role === 'admin' ? 'block' : 'none';
     document.getElementById('btnAdminClearDetached').style.display = role === 'admin' ? 'block' : 'none';
-}
+};
 
-function submitAdminLogin() {
+window.submitAdminLogin = () => {
     if(document.getElementById('adminPasswordInput').value === '1401') { 
         state.currentRole = 'admin';
-        unlockApplication();
+        window.unlockApplication();
     } else {
-        showCustomAlert("icon-error", "สิทธิ์การเข้าถึง", "รหัสผ่านไม่ถูกต้อง");
+        window.showCustomAlert("icon-error", "สิทธิ์การเข้าถึง", "รหัสผ่านไม่ถูกต้อง");
     }
-}
+};
 
-function submitMemberLogin() {
+window.submitMemberLogin = () => {
     if(document.getElementById('roomCodeInput').value === state.roomCode) {
         state.currentRole = 'member';
-        unlockApplication();
+        window.unlockApplication();
     } else {
-        showCustomAlert("icon-error", "ระบุเลขห้อง", "เลขห้องไม่ถูกต้อง ไม่สามารถเข้าถึงห้องนี้ได้!");
+        window.showCustomAlert("icon-error", "ระบุเลขห้อง", "เลขห้องไม่ถูกต้อง ไม่สามารถเข้าถึงห้องนี้ได้!");
     }
-}
+};
 
-function unlockApplication() {
+window.unlockApplication = () => {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('main-app').style.display = 'flex';
     document.getElementById('adminGenBtn').style.display = state.currentRole === 'admin' ? 'block' : 'none';
@@ -142,79 +177,76 @@ function unlockApplication() {
     if (savedName && savedName.trim() !== "") {
         nameInput.value = savedName;
         nameInput.disabled = true;
-        setButtonToEditMode(); 
+        window.setButtonToEditMode(); 
     } else {
         nameInput.value = '';
         nameInput.disabled = false;
-        setButtonToSaveMode(); 
+        window.setButtonToSaveMode(); 
     }
-    updateApplicationUI();
-    manageFooterVisibility('record'); 
-}
+    window.updateApplicationUI();
+    window.manageFooterVisibility('record'); 
+};
 
-function forceLockApplication() {
+window.forceLockApplication = () => {
     document.getElementById('login-overlay').style.display = 'flex';
     document.getElementById('main-app').style.display = 'none';
     document.getElementById('roomCodeInput').value = '';
     document.getElementById('adminPasswordInput').value = '';
-    closeDetachedLogView();
-}
+    window.closeDetachedLogView();
+};
 
-function toggleNameState() {
+
+// 📝 Core Actions
+window.toggleNameState = () => {
     const nameInput = document.getElementById('userName');
     if (nameInput.disabled) {
-        if(nameInput.value.trim() !== "") {
-            localStorage.setItem('pre_rename_hold', nameInput.value.trim());
-        }
+        if(nameInput.value.trim() !== "") localStorage.setItem('pre_rename_hold', nameInput.value.trim());
         nameInput.disabled = false;
         nameInput.focus();
-        setButtonToSaveMode();
+        window.setButtonToSaveMode();
     } else {
         const newName = nameInput.value.trim();
         if(!newName) {
-            showCustomAlert("icon-error", "ข้อมูลไม่ครบ", "กรุณาระบุชื่อก่อนครับ");
+            window.showCustomAlert("icon-error", "ข้อมูลไม่ครบ", "กรุณาระบุชื่อก่อนครับ");
             return nameInput.focus();
         }
 
         const oldName = localStorage.getItem('pre_rename_hold') || localStorage.getItem('myTallyName');
         if (oldName && oldName !== newName && oldName.trim() !== "") {
-            state.transactions.push({
+            const renameTx = {
                 id: Date.now(), deviceId: myDeviceID,
                 time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
                 name: newName, type: 'rename', oldName: oldName, device: getDeviceInfo()
-            });
+            };
+            push(ref(db, 'transactions'), renameTx); // 🔥 เซฟออนไลน์
         }
         localStorage.setItem('myTallyName', newName);
         localStorage.removeItem('pre_rename_hold'); 
         nameInput.disabled = true;
-        setButtonToEditMode();
-        saveMockDB();
-        updateApplicationUI();
+        window.setButtonToEditMode();
     }
-}
+};
 
-function setButtonToSaveMode() {
+window.setButtonToSaveMode = () => {
     document.getElementById('btn-name-icon').className = "fa-solid fa-floppy-disk";
-    document.getElementById('btn-name-toggle').style.background = "#ecfdf5";
-    document.getElementById('btn-name-toggle').style.color = "#10b981";
-    document.getElementById('btn-name-toggle').style.borderColor = "#a7f3d0";
-}
+    const btn = document.getElementById('btn-name-toggle');
+    btn.style.background = "#ecfdf5"; btn.style.color = "#10b981"; btn.style.borderColor = "#a7f3d0";
+};
 
-function setButtonToEditMode() {
+window.setButtonToEditMode = () => {
     document.getElementById('btn-name-icon').className = "fa-solid fa-pen-to-square";
-    document.getElementById('btn-name-toggle').style.background = "#f1f5f9";
-    document.getElementById('btn-name-toggle').style.color = "#6366f1";
-    document.getElementById('btn-name-toggle').style.borderColor = "#e2e8f0";
-}
+    const btn = document.getElementById('btn-name-toggle');
+    btn.style.background = "#f1f5f9"; btn.style.color = "#6366f1"; btn.style.borderColor = "#e2e8f0";
+};
 
-function actionGenerateRoomCode() {
-    state.roomCode = Math.floor(1000 + Math.random() * 9000).toString();
-    document.getElementById('roomCodeDisplay').innerText = state.roomCode;
-    saveMockDB();
-    showCustomAlert("icon-success", "สำเร็จ", `เปลี่ยนเลขห้องสำเร็จเป็น: ${state.roomCode}`);
-}
+window.actionGenerateRoomCode = () => {
+    const newCode = Math.floor(1000 + Math.random() * 9000).toString();
+    set(ref(db, 'systemConfig/roomCode'), newCode).then(() => { // 🔥 เซฟออนไลน์
+        window.showCustomAlert("icon-success", "สำเร็จ", `เปลี่ยนเลขห้องสำเร็จเป็น: ${newCode}`);
+    });
+};
 
-function setMode(mode) {
+window.setMode = (mode) => {
     state.currentMode = mode;
     const isW = mode === 'withdraw';
     const isR = mode === 'return';
@@ -224,40 +256,35 @@ function setMode(mode) {
     
     document.getElementById('withdraw-section').style.display = isW ? 'flex' : 'none';
     document.getElementById('return-section').style.display = isR ? 'flex' : 'none';
-}
+};
 
-function updateWithdrawButtonText() {
+window.updateWithdrawButtonText = () => {
     const input = document.getElementById('withdrawAmount');
-    const btnText = document.getElementById('btnWithdrawTextValue');
     const amt = parseInt(input.value);
-    btnText.innerText = (isNaN(amt) || amt <= 0) ? "200" : amt.toLocaleString();
-}
+    document.getElementById('btnWithdrawTextValue').innerText = (isNaN(amt) || amt <= 0) ? "200" : amt.toLocaleString();
+};
 
-function executeWithdraw() {
-    const input = document.getElementById('withdrawAmount');
-    let amt = parseInt(input.value);
+window.executeWithdraw = () => {
+    let amt = parseInt(document.getElementById('withdrawAmount').value);
     if (isNaN(amt) || amt <= 0) amt = 200;
-    executeSaveEntry(amt);
-    input.value = '';
-    updateWithdrawButtonText();
-}
+    window.executeSaveEntry(amt);
+    document.getElementById('withdrawAmount').value = '';
+    window.updateWithdrawButtonText();
+};
 
-function executeReturn() {
+window.executeReturn = () => {
     const input = document.getElementById('returnAmount');
     const amt = parseInt(input.value);
-    if(!amt || amt <= 0) {
-        showCustomAlert("icon-error", "ข้อมูลไม่ถูกต้อง", "ระบุยอดเงินด้วยครับ");
-        return;
-    }
-    executeSaveEntry(amt);
+    if(!amt || amt <= 0) return window.showCustomAlert("icon-error", "ข้อมูลไม่ถูกต้อง", "ระบุยอดเงินด้วยครับ");
+    window.executeSaveEntry(amt);
     input.value = '';
-}
+};
 
-function executeSaveEntry(amount) {
+window.executeSaveEntry = (amount) => {
     const nameInput = document.getElementById('userName');
     const currentInputValue = nameInput.value.trim();
     if(!currentInputValue) {
-        showCustomAlert("icon-error", "ระบุชื่อผู้ใช้", "กรุณาใส่ชื่อก่อนครับ!");
+        window.showCustomAlert("icon-error", "ระบุชื่อผู้ใช้", "กรุณาใส่ชื่อก่อนครับ!");
         return nameInput.focus();
     }
     
@@ -267,19 +294,19 @@ function executeSaveEntry(amount) {
     localStorage.setItem('myTallyName', currentInputValue);
     localStorage.removeItem('pre_rename_hold');
     nameInput.disabled = true;
-    setButtonToEditMode();
+    window.setButtonToEditMode();
 
-    state.transactions.push({
+    const newTx = {
         id: Date.now(), deviceId: myDeviceID, 
         time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
         name: currentInputValue, type: state.currentMode,
         amount: Math.abs(parseInt(amount)), device: getDeviceInfo(), renameNote: calculatedRenameNote 
-    });
-    saveMockDB();
-    updateApplicationUI();
-}
+    };
+    push(ref(db, 'transactions'), newTx); // 🔥 เซฟออนไลน์
+};
 
-function updateApplicationUI() {
+// 📊 UI Generators
+window.updateApplicationUI = () => {
     const body = document.getElementById('historyBody');
     if(!state.transactions || state.transactions.length === 0) {
         body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-sub);">ยังไม่มีข้อมูลในรอบนี้</td></tr>`;
@@ -307,16 +334,14 @@ function updateApplicationUI() {
         });
     }
 
-    const totalEl = document.getElementById('grandTotal');
-    totalEl.innerText = `${grandTotal >= 0 ? '+' : ''}${grandTotal.toLocaleString()} ฿`;
-    totalEl.style.color = grandTotal >= 0 ? 'var(--return)' : 'var(--withdraw)';
+    document.getElementById('grandTotal').innerText = `${grandTotal >= 0 ? '+' : ''}${grandTotal.toLocaleString()} ฿`;
+    document.getElementById('grandTotal').style.color = grandTotal >= 0 ? 'var(--return)' : 'var(--withdraw)';
 
     const summaryContainer = document.getElementById('summaryList');
-    const summaryKeys = Object.keys(summaryMap);
-    if(summaryKeys.length === 0) {
+    if(Object.keys(summaryMap).length === 0) {
         summaryContainer.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub);">ยังไม่มีข้อมูลในรอบนี้</div>`;
     } else {
-        summaryContainer.innerHTML = summaryKeys.map(k => {
+        summaryContainer.innerHTML = Object.keys(summaryMap).map(k => {
             const data = summaryMap[k];
             const net = data.return - data.withdraw;
             return `
@@ -335,20 +360,19 @@ function updateApplicationUI() {
                 </div>`;
         }).join('');
     }
-    renderApplicationLogs();
-}
+};
 
-function renderApplicationLogs() {
-    const mainFilterValue = document.getElementById('mainLogDateFilter').value;
-    const logContainer = document.getElementById('logList');
-    buildLogHtmlStructure(mainFilterValue, logContainer);
-}
+window.renderApplicationLogs = () => {
+    window.buildLogHtmlStructure(document.getElementById('mainLogDateFilter').value, document.getElementById('logList'));
+};
 
-function buildLogHtmlStructure(filterDate, containerElement) {
+window.renderDetachedLogContent = () => {
+    window.buildLogHtmlStructure(document.getElementById('detachedLogDate').value, document.getElementById('detachedLogContentList'));
+};
+
+window.buildLogHtmlStructure = (filterDate, containerElement) => {
     let listToRender = state.sessions;
-    if(filterDate) {
-        listToRender = state.sessions.filter(s => s.pureDate === filterDate);
-    }
+    if(filterDate) listToRender = state.sessions.filter(s => s.pureDate === filterDate);
 
     if(!listToRender || listToRender.length === 0) {
         containerElement.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub);">ไม่มีข้อมูลประวัติย้อนหลัง</div>`;
@@ -373,55 +397,52 @@ function buildLogHtmlStructure(filterDate, containerElement) {
             </div>
         </div>
     `).join('');
-}
+};
 
-function clearMainLogFilter() {
+window.clearMainLogFilter = () => {
     document.getElementById('mainLogDateFilter').value = '';
-    renderApplicationLogs();
-}
+    window.renderApplicationLogs();
+};
 
-function executeEndRoundOnly() {
+window.clearDetachedLogSearch = () => {
+    document.getElementById('detachedLogDate').value = '';
+    window.renderDetachedLogContent();
+};
+
+// 🏁 Admin Actions (Reset & End Round)
+window.executeEndRoundOnly = () => {
     if(!state.transactions || state.transactions.length === 0) {
-        showCustomAlert("icon-error", "ไม่มีรายการ", "ไม่สามารถจบรอบได้เนื่องจากยังไม่มีรายการบันทึก");
-        return;
+        return window.showCustomAlert("icon-error", "ไม่มีรายการ", "ไม่สามารถจบรอบได้เนื่องจากยังไม่มีรายการบันทึก");
     }
-    showCustomConfirm("🏁 ยืนยันจบยอดรอบนี้", "คุณต้องการจบยอดรอบปัจจุบันใช่หรือไม่? ระบบจะเซฟเข้าประวัติให้ทันที", () => {
-        processSaveCurrentRoundToHistory();
-        showCustomAlert("icon-success", "สำเร็จ", "จบยอดรอบปัจจุบันและย้ายประวัติเข้าสู่คลังเรียบร้อย!");
+    window.showCustomConfirm("🏁 ยืนยันจบยอดรอบนี้", "คุณต้องการจบยอดรอบปัจจุบันใช่หรือไม่? ระบบจะเซฟเข้าประวัติให้ทันที", () => {
+        window.processSaveCurrentRoundToHistory();
+        window.showCustomAlert("icon-success", "สำเร็จ", "จบยอดรอบปัจจุบันและย้ายประวัติเข้าสู่คลังเรียบร้อย!");
     });
-}
+};
 
-function askResetRoundPopup() {
-    showCustomConfirm(
-        "🔐 ยืนยันการ Reset ห้อง", 
-        "ต้องการ reset เพื่อจบรอบและ re ห้องใหม่?", 
-        () => { executeResetRoomActionComplete(); }
-    );
-}
+window.askResetRoundPopup = () => {
+    window.showCustomConfirm("🔐 ยืนยันการ Reset ห้อง", "ต้องการ reset เพื่อจบรอบและ re ห้องใหม่?", () => { 
+        window.executeResetRoomActionComplete(); 
+    });
+};
 
-function executeResetRoomActionComplete() {
+window.executeResetRoomActionComplete = () => {
     if(state.transactions && state.transactions.length > 0) {
-        processSaveCurrentRoundToHistory();
+        window.processSaveCurrentRoundToHistory();
     }
+    const newCode = Math.floor(1000 + Math.random() * 9000).toString(); 
     
-    state.transactions = []; 
-    state.roomCode = Math.floor(1000 + Math.random() * 9000).toString(); 
-    localStorage.setItem('global_reset_signal', 'triggered');
-    
-    saveMockDB();
-    updateApplicationUI(); 
+    // 🔥 สั่ง Reset ออนไลน์เพื่อให้เครื่องอื่นหลุด
+    set(ref(db, 'systemConfig'), { roomCode: newCode, isResetting: true }).then(() => {
+        setTimeout(() => set(ref(db, 'systemConfig/isResetting'), false), 5000); // ยกเลิกการดีดหลัง 5 วินาที
+        window.showCustomAlert("icon-success", "Reset สำเร็จ", `ระบบทำการจบรอบ ล้างรายการ และสุ่มรหัสห้องใหม่เรียบร้อย! รหัสห้องถัดไปคือ: ${newCode}`);
+    });
+};
 
-    document.getElementById('roomCodeDisplay').innerText = state.roomCode;
-    showCustomAlert("icon-success", "Reset สำเร็จ", `ระบบทำการจบรอบ ล้างรายการ และสุ่มรหัสห้องใหม่เรียบร้อย! รหัสห้องถัดไปคือ: ${state.roomCode}`);
-}
-
-function processSaveCurrentRoundToHistory() {
-    let total = state.transactions.reduce((s, t) => {
-        if(t.type === 'rename') return s;
-        return s + (t.type === 'withdraw' ? -t.amount : t.amount);
-    }, 0);
-
+window.processSaveCurrentRoundToHistory = () => {
+    let total = state.transactions.reduce((s, t) => s + (t.type === 'withdraw' ? -t.amount : t.amount), 0);
     let summaryMap = {};
+    
     state.transactions.forEach(t => {
         const key = t.deviceId || t.name;
         if(!summaryMap[key]) summaryMap[key] = { name: t.name, withdraw: 0, return: 0, lastTime: t.id };
@@ -431,72 +452,52 @@ function processSaveCurrentRoundToHistory() {
         else summaryMap[key].return += t.amount;
     });
 
-    let detailedMembersLog = Object.keys(summaryMap).map(k => {
-        const d = summaryMap[k];
-        return { name: d.name, amount: d.return - d.withdraw };
-    });
-
+    let membersLog = Object.keys(summaryMap).map(k => ({ name: summaryMap[k].name, amount: summaryMap[k].return - summaryMap[k].withdraw }));
     const now = new Date();
-    state.sessions.unshift({
-        id: Date.now(),
-        date: now.toLocaleString('th-TH'),
-        pureDate: now.toISOString().split('T')[0],
-        total: total,
-        members: detailedMembersLog
+    
+    // 🔥 ส่งประวัติใหม่ขึ้น Firebase
+    push(ref(db, 'sessions'), {
+        id: Date.now(), date: now.toLocaleString('th-TH'), pureDate: now.toISOString().split('T')[0],
+        total: total, members: membersLog
     });
+    
+    remove(ref(db, 'transactions')); // 🔥 ล้างรายการเดิมออนไลน์
+};
 
-    state.transactions = []; 
-    saveMockDB();
-    updateApplicationUI();
-}
-
-function askClearAllSessions() {
-    if (state.currentRole !== 'admin') return;
-    showCustomConfirm("🚨 ยืนยันการลบประวัติ", "คุณแน่ใจใช่หรือไม่ว่าต้องการลบประวัติย้อนหลังทุกรอบทิ้งถาวร? (ข้อมูลจะหายถาวร)", () => {
-        state.sessions = []; 
-        saveMockDB();
-        if(document.getElementById('detached-log-view').style.display === 'block') {
-            renderDetachedLogContent();
-        } else {
-            renderApplicationLogs();
-        }
-        showCustomAlert("icon-success", "ลบเรียบร้อย", "ลบประวัติรอบย้อนหลังทั้งหมดเกลี้ยงตู้ถาวรสำเร็จ!");
+window.askClearAllSessions = () => {
+    window.showCustomConfirm("🚨 ยืนยันการลบประวัติ", "คุณแน่ใจใช่หรือไม่ว่าต้องการลบประวัติย้อนหลังทุกรอบทิ้งถาวร?", () => {
+        remove(ref(db, 'sessions')).then(() => { // 🔥 ล้างประวัติออนไลน์
+            window.showCustomAlert("icon-success", "ลบเรียบร้อย", "ลบประวัติรอบย้อนหลังทั้งหมดเกลี้ยงตู้ถาวรสำเร็จ!");
+        });
     });
-}
+};
 
-function openDetachedLogView() {
+// 🧭 Views toggles
+window.openDetachedLogView = () => {
     document.getElementById('loginMainCard').style.display = 'none';
     document.getElementById('detached-log-view').style.display = 'block';
-    renderDetachedLogContent();
-}
+    window.renderDetachedLogContent();
+};
 
-function closeDetachedLogView() {
+window.closeDetachedLogView = () => {
     document.getElementById('detached-log-view').style.display = 'none';
     document.getElementById('loginMainCard').style.display = 'block';
-}
+};
 
-function renderDetachedLogContent() {
-    const filterVal = document.getElementById('detachedLogDate').value;
-    const container = document.getElementById('detachedLogContentList');
-    buildLogHtmlStructure(filterVal, container);
-}
+window.manageFooterVisibility = (tabId) => {
+    document.getElementById('app-sticky-footer').style.display = (tabId === 'record' || tabId === 'summary') ? 'flex' : 'none';
+};
 
-document.getElementById('detachedLogDate').addEventListener('change', renderDetachedLogContent);
-
-function clearDetachedLogSearch() {
-    document.getElementById('detachedLogDate').value = '';
-    renderDetachedLogContent();
-}
-
-function manageFooterVisibility(tabId) {
-    const footer = document.getElementById('app-sticky-footer');
-    footer.style.display = (tabId === 'record' || tabId === 'summary') ? 'flex' : 'none';
-}
-
-function switchTab(tabId) {
+window.switchTab = (tabId) => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + tabId).classList.add('active');
-    document.getElementById('btn-' + tabId).classList.add('active');
-    manageFooterVisibility(tabId); 
-}
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    document.getElementById(`btn-${tabId}`).classList.add('active');
+    window.manageFooterVisibility(tabId); 
+};
+
+// รอให้โหลด DOM เสร็จก่อนใส่ Event
+document.addEventListener('DOMContentLoaded', () => {
+    const detachedLogDateInput = document.getElementById('detachedLogDate');
+    if (detachedLogDateInput) detachedLogDateInput.addEventListener('change', window.renderDetachedLogContent);
+});
