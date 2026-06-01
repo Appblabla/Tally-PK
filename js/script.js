@@ -58,7 +58,6 @@ window.switchLoginRole = (role) => {
 window.submitAdminLogin = () => {
     if(document.getElementById('adminPasswordInput').value === '1401') { 
         state.currentRole = 'admin';
-        // ✅ จำสถานะ Admin ลงเครื่อง
         localStorage.setItem('tallyLoginStatus', 'loggedin');
         localStorage.setItem('tallyLoginRole', 'admin');
         window.unlockApplication();
@@ -70,7 +69,6 @@ window.submitAdminLogin = () => {
 window.submitMemberLogin = () => {
     if(document.getElementById('roomCodeInput').value === state.roomCode) {
         state.currentRole = 'member';
-        // ✅ จำสถานะ สมาชิก ลงเครื่อง
         localStorage.setItem('tallyLoginStatus', 'loggedin');
         localStorage.setItem('tallyLoginRole', 'member');
         window.unlockApplication();
@@ -106,7 +104,6 @@ window.unlockApplication = () => {
 };
 
 window.forceLockApplication = () => {
-    // ❌ ล้างข้อมูลความจำการล็อกอินทั้งหมดเมื่อโดนเตะหรือล็อกเอาต์
     localStorage.removeItem('tallyLoginStatus');
     localStorage.removeItem('tallyLoginRole');
 
@@ -140,8 +137,6 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
             state.roomCode = data.roomCode;
             document.getElementById('roomCodeDisplay').innerText = state.roomCode;
             
-            // 💡 เคสพิเศษ: ถ้าหากเลขห้องในระบบเปลี่ยนไปแล้ว และผู้ใช้ปัจจุบันเป็น Role สมาชิก ('member') 
-            // ให้ตรวจสอบว่าตรงกับที่ล็อกอินค้างไว้ไหม ถ้าไม่ตรง ให้สั่งดีดออกทันทีป้องกันเข้าห้องผิด
             if(localStorage.getItem('tallyLoginRole') === 'member' && localStorage.getItem('tallyLoginStatus') === 'loggedin') {
                 const lastEnteredRoom = document.getElementById('roomCodeInput').value;
                 if(lastEnteredRoom && lastEnteredRoom !== state.roomCode) {
@@ -150,7 +145,6 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
             }
         }
         
-        // ถ้าระบบโดน Reset สั่งดีดคนออก (และล้างข้อมูลจำล็อกอิน)
         if(data.isResetting && state.currentRole === 'member' && document.getElementById('login-overlay').style.display === 'none') {
             window.showCustomAlert(
                 "icon-confirm", 
@@ -161,8 +155,6 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
         }
     }
     
-    // 🚀 [ฟังก์ชันตรวจสอบสิทธิ์อัตโนมัติเมื่อเปิดหน้าจอขึ้นมา]
-    // จะเริ่มทำงานเมื่อดึงค่า roomCode จาก Firebase สำเร็จเป็นครั้งแรกเท่านั้น
     window.checkAutoLoginOnLoad();
 });
 
@@ -170,7 +162,6 @@ window.checkAutoLoginOnLoad = () => {
     const loginStatus = localStorage.getItem('tallyLoginStatus');
     const savedRole = localStorage.getItem('tallyLoginRole');
 
-    // ตรวจสอบเงื่อนไขว่าในเครื่องบันทึกว่าเคย Login สำเร็จไว้หรือไม่
     if (loginStatus === 'loggedin' && savedRole) {
         state.currentRole = savedRole;
         window.unlockApplication();
@@ -364,9 +355,11 @@ window.updateApplicationUI = () => {
     
     if (state.transactions) {
         state.transactions.forEach(t => {
-            const key = t.deviceId || t.name;
-            if(!summaryMap[key]) summaryMap[key] = { name: t.name, withdraw: 0, return: 0, lastTime: t.id };
-            if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = t.name; summaryMap[key].lastTime = t.id; }
+            // ✅ แก้ไขจุดนี้: ใช้ชื่อ (t.name) เป็น Key หลักแทน Device ID เพื่อให้ข้ามเบราว์เซอร์แล้วยอดรวมกัน
+            const key = t.name ? t.name.trim() : 'Unknown';
+            
+            if(!summaryMap[key]) summaryMap[key] = { name: key, withdraw: 0, return: 0, lastTime: t.id };
+            if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = key; summaryMap[key].lastTime = t.id; }
             if(t.type === 'rename') return;
             
             const amt = t.amount ? parseInt(t.amount) : 0;
@@ -496,9 +489,11 @@ window.processSaveCurrentRoundToHistory = () => {
     let summaryMap = {};
     
     state.transactions.forEach(t => {
-        const key = t.deviceId || t.name;
-        if(!summaryMap[key]) summaryMap[key] = { name: t.name, withdraw: 0, return: 0, lastTime: t.id };
-        if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = t.name; summaryMap[key].lastTime = t.id; }
+        // ✅ แก้ไขจุดนี้: ใช้ชื่อ (t.name) ในการคำนวณเซฟประวัติย้อนหลังด้วย
+        const key = t.name ? t.name.trim() : 'Unknown';
+        
+        if(!summaryMap[key]) summaryMap[key] = { name: key, withdraw: 0, return: 0, lastTime: t.id };
+        if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = key; summaryMap[key].lastTime = t.id; }
         if(t.type === 'rename') return;
         
         const amt = t.amount ? parseInt(t.amount) : 0;
