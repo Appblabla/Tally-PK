@@ -25,17 +25,16 @@ const getDeviceFingerprint = () => {
     let os = "Device";
     if (/iPhone/i.test(ua)) os = "iPhone";
     else if (/iPad/i.test(ua)) os = "iPad";
-    else if (/Android/i.test(ua)) os = "Android";
+    else if (/Android/i.test(ua)) {
+        os = "Android";
+    }
     else if (/Macintosh/i.test(ua)) os = "Mac";
     else if (/Windows/i.test(ua)) os = "Windows";
 
-    // สร้าง ID แฝงที่แชร์ร่วมกันได้ระหว่าง Chrome/Safari บนเครื่องเดียวกัน
-    // โดยคำนวณจาก ระบบปฏิบัติการ + ความกว้างหน้าจอ + ความสูงหน้าจอ
     const hardwareKey = `${os}-${screenWidth}x${screenHeight}-${pixelRatio}`;
     return hardwareKey;
 };
 
-// ดึงไอดีเครื่องแบบถาวร (ถ้าบราวเซอร์ล้าง LocalStorage ก็ยังมีคีย์สำรองจาก Fingerprint)
 if (!localStorage.getItem('myDeviceID')) {
     localStorage.setItem('myDeviceID', 'dev-' + Date.now() + Math.random().toString(36).substr(2, 5));
 }
@@ -83,8 +82,6 @@ window.switchLoginRole = (role) => {
 window.submitAdminLogin = () => {
     if(document.getElementById('adminPasswordInput').value === '1401') { 
         state.currentRole = 'admin';
-        localStorage.setItem('tallyLoginStatus', 'loggedin');
-        localStorage.setItem('tallyLoginRole', 'admin');
         window.unlockApplication();
     } else {
         window.showCustomAlert("icon-error", "สิทธิ์การเข้าถึง", "รหัสผ่านไม่ถูกต้อง");
@@ -94,8 +91,6 @@ window.submitAdminLogin = () => {
 window.submitMemberLogin = () => {
     if(document.getElementById('roomCodeInput').value === state.roomCode) {
         state.currentRole = 'member';
-        localStorage.setItem('tallyLoginStatus', 'loggedin');
-        localStorage.setItem('tallyLoginRole', 'member');
         window.unlockApplication();
     } else {
         window.showCustomAlert("icon-error", "ระบุเลขห้อง", "เลขห้องไม่ถูกต้อง ไม่สามารถเข้าถึงห้องนี้ได้!");
@@ -129,9 +124,6 @@ window.unlockApplication = () => {
 };
 
 window.forceLockApplication = () => {
-    localStorage.removeItem('tallyLoginStatus');
-    localStorage.removeItem('tallyLoginRole');
-
     document.getElementById('login-overlay').style.display = 'flex';
     document.getElementById('main-app').style.setProperty('display', 'none', 'important');
     document.getElementById('roomCodeInput').value = '';
@@ -161,13 +153,6 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
         if(data.roomCode && data.roomCode !== state.roomCode) {
             state.roomCode = data.roomCode;
             document.getElementById('roomCodeDisplay').innerText = state.roomCode;
-            
-            if(localStorage.getItem('tallyLoginRole') === 'member' && localStorage.getItem('tallyLoginStatus') === 'loggedin') {
-                const lastEnteredRoom = document.getElementById('roomCodeInput').value;
-                if(lastEnteredRoom && lastEnteredRoom !== state.roomCode) {
-                     window.forceLockApplication();
-                }
-            }
         }
         
         if(data.isResetting && state.currentRole === 'member' && document.getElementById('login-overlay').style.display === 'none') {
@@ -179,19 +164,7 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
             );
         }
     }
-    
-    window.checkAutoLoginOnLoad();
 });
-
-window.checkAutoLoginOnLoad = () => {
-    const loginStatus = localStorage.getItem('tallyLoginStatus');
-    const savedRole = localStorage.getItem('tallyLoginRole');
-
-    if (loginStatus === 'loggedin' && savedRole) {
-        state.currentRole = savedRole;
-        window.unlockApplication();
-    }
-};
 
 // ==========================================
 // 🌟 🛠️ 3. Custom Popup Engine
@@ -268,7 +241,7 @@ window.toggleNameState = () => {
             const renameTx = {
                 id: Date.now(), 
                 deviceId: myDeviceID,
-                fingerprint: hardwareFingerprint, // แนบฟิงเกอร์ปริ้นท์ไปด้วย
+                fingerprint: hardwareFingerprint,
                 time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
                 name: newName, type: 'rename', oldName: oldName, device: getDeviceInfo()
             };
@@ -353,7 +326,7 @@ window.executeSaveEntry = (amount) => {
     const newTx = {
         id: Date.now(), 
         deviceId: myDeviceID, 
-        fingerprint: hardwareFingerprint, // ✅ ส่งคีย์โรงงานเครื่องขึ้นระบบไปด้วย
+        fingerprint: hardwareFingerprint, 
         time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
         name: currentInputValue, type: state.currentMode,
         amount: Math.abs(parseInt(amount)), device: getDeviceInfo(), renameNote: calculatedRenameNote 
@@ -386,10 +359,6 @@ window.updateApplicationUI = () => {
         state.transactions.forEach(t => {
             if(!t.name || t.type === 'rename') return;
             
-            // ✅ ดักจับขั้นเทพ: แยกคีย์กลุ่มด้วย (Fingerprint ของเครื่อง + ชื่อที่พิมพ์แบบคลีน)
-            // วิธีนี้ทำให้:
-            // 1. ถ้าคนละเครื่อง ชื่อซ้ำกัน ->Fingerprint ต่างกัน -> ยอดแยกกัน ไม่รวมมั่วซั่ว!
-            // 2. ถ้าเครื่องเดียวกัน เปิดคนละบราวเซอร์ พิมพ์ชื่อเดียวกัน -> Fingerprint เหมือนกัน -> ยอดยุบรวมกันให้ทันที!
             const cleanName = t.name.trim().toLowerCase();
             const machineKey = t.fingerprint ? t.fingerprint : (t.deviceId || 'unknown');
             const key = `${machineKey}_${cleanName}`;
@@ -531,7 +500,6 @@ window.processSaveCurrentRoundToHistory = () => {
     state.transactions.forEach(t => {
         if(!t.name || t.type === 'rename') return;
         
-        // ผูก Logic คลีนนิ่งคีย์ตอนบันทึกลงประวัติคลัง Log ถาวรด้วยเช่นกัน
         const cleanName = t.name.trim().toLowerCase();
         const machineKey = t.fingerprint ? t.fingerprint : (t.deviceId || 'unknown');
         const key = `${machineKey}_${cleanName}`;
