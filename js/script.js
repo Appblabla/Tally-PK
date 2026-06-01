@@ -30,7 +30,12 @@ const getDeviceInfo = () => {
         if (match) return match[2].length > 20 ? "Android" : match[2]; 
         return "Android";
     }
-    if (/Macintosh/i.test(ua)) return "Mac";
+    if (/Macintosh/i.test(ua)) {
+        // 💡 อัปเดตเพิ่ม: แยกคีย์ให้ชัดเจนระหว่าง Chrome บน Mac และ Safari บน Mac หน้าเว็บจะได้รู้ความต่าง
+        if (/Chrome/i.test(ua) && !/Chromium/i.test(ua)) return "Mac (Chrome)";
+        if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "Mac (Safari)";
+        return "Mac";
+    }
     if (/Windows/i.test(ua)) return "Windows PC";
     return "Device";
 };
@@ -346,7 +351,9 @@ window.updateApplicationUI = () => {
             }
             const isW = t.type === 'withdraw';
             const currentAmount = t.amount ? t.amount : 0;
-            return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td><strong>${t.name} - ${t.device}</strong>${t.renameNote ? `<br><small class="rename-note"><i class="fa-solid fa-clock-rotate-left"></i> ${t.renameNote}</small>` : ''}</td><td class="${isW ? 't-red' : 't-green'}">${isW ? '-' : '+'}${currentAmount.toLocaleString()}</td><td>${currentAmount / 200} ขีด</td></tr>`;
+            
+            // 💡 ปรับการแสดงผลประวัติตารางตรงหน้าแรก: แยกชื่อกับเครื่องให้คลีนขึ้นด้วยวงเล็บ ()
+            return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td><strong>${t.name}</strong> <span style="font-size:0.75rem; color:var(--text-sub); font-weight:normal;">(${t.device})</span>${t.renameNote ? `<br><small class="rename-note"><i class="fa-solid fa-clock-rotate-left"></i> ${t.renameNote}</small>` : ''}</td><td class="${isW ? 't-red' : 't-green'}">${isW ? '-' : '+'}${currentAmount.toLocaleString()}</td><td>${currentAmount / 200} ขีด</td></tr>`;
         }).join('');
     }
 
@@ -355,12 +362,18 @@ window.updateApplicationUI = () => {
     
     if (state.transactions) {
         state.transactions.forEach(t => {
-            // ✅ แก้ไขจุดนี้: ใช้ชื่อ (t.name) เป็น Key หลักแทน Device ID เพื่อให้ข้ามเบราว์เซอร์แล้วยอดรวมกัน
-            const key = t.name ? t.name.trim() : 'Unknown';
+            if(!t.name || t.type === 'rename') return;
             
-            if(!summaryMap[key]) summaryMap[key] = { name: key, withdraw: 0, return: 0, lastTime: t.id };
-            if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = key; summaryMap[key].lastTime = t.id; }
-            if(t.type === 'rename') return;
+            // ✅ จุดฟิกบั๊ค: ตัดช่องว่างและแปลงเป็นพิมพ์เล็กเพื่อใช้ดักจับคีย์ชื่อเพียว ๆ ข้ามทุกเบราว์เซอร์
+            const key = t.name.trim().toLowerCase();
+            
+            if(!summaryMap[key]) {
+                summaryMap[key] = { name: t.name.trim(), withdraw: 0, return: 0, lastTime: t.id };
+            }
+            if(t.id >= summaryMap[key].lastTime) { 
+                summaryMap[key].name = t.name.trim(); 
+                summaryMap[key].lastTime = t.id; 
+            }
             
             const amt = t.amount ? parseInt(t.amount) : 0;
             if(isNaN(amt)) return;
@@ -489,12 +502,18 @@ window.processSaveCurrentRoundToHistory = () => {
     let summaryMap = {};
     
     state.transactions.forEach(t => {
-        // ✅ แก้ไขจุดนี้: ใช้ชื่อ (t.name) ในการคำนวณเซฟประวัติย้อนหลังด้วย
-        const key = t.name ? t.name.trim() : 'Unknown';
+        if(!t.name || t.type === 'rename') return;
         
-        if(!summaryMap[key]) summaryMap[key] = { name: key, withdraw: 0, return: 0, lastTime: t.id };
-        if(t.id >= summaryMap[key].lastTime) { summaryMap[key].name = key; summaryMap[key].lastTime = t.id; }
-        if(t.type === 'rename') return;
+        // ✅ ปรับแก้ตรงนี้ให้จับคู่ชื่อคลีนเพียว ๆ ตอนบันทึกย้ายลงประวัติคลังเก็บ Log ย้อนหลัง
+        const key = t.name.trim().toLowerCase();
+        
+        if(!summaryMap[key]) {
+            summaryMap[key] = { name: t.name.trim(), withdraw: 0, return: 0, lastTime: t.id };
+        }
+        if(t.id >= summaryMap[key].lastTime) { 
+            summaryMap[key].name = t.name.trim(); 
+            summaryMap[key].lastTime = t.id; 
+        }
         
         const amt = t.amount ? parseInt(t.amount) : 0;
         if(isNaN(amt)) return;
