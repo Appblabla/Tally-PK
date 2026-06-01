@@ -1,4 +1,4 @@
-/* 🎨 Tally-PK: Global Design System (v5.7) */
+/* 🎨 Tally-PK: Global Design System */
 :root {
     --primary-start: #6366f1;
     --primary-end: #a855f7;
@@ -13,266 +13,132 @@
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Sarabun', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; }
 
-body {
-    font-family: 'Sarabun', sans-serif;
-    background-color: var(--bg);
-    color: var(--text-main);
-    margin: 0;
-    padding: 0;
+/* 🔒 หน้าจอ Login Overlay */
+#login-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+    z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px;
+    overflow-y: auto;
 }
+.login-card {
+    background: white; width: 100%; max-width: 400px; padding: 35px 30px;
+    border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center;
+}
+.role-selector { display: flex; gap: 10px; margin-bottom: 25px; background: #f1f5f9; padding: 4px; border-radius: 12px; }
+.role-btn { 
+    flex: 1; padding: 14px; border: none; border-radius: 10px;
+    background: transparent; font-size: 1rem; font-weight: bold; cursor: pointer; color: var(--text-sub); transition: 0.2s;
+}
+.role-btn.active { background: white; color: var(--primary-start); box-shadow: var(--shadow); }
 
-/* 📱 Container: เงาหนาชัดเจนตามที่ต้องการ */
+/* 📱 Main App Container */
 .app-container {
-    max-width: 500px;
-    margin: 0 auto;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: #fff;
-    position: relative;
-    box-shadow: 0 0 50px rgba(255, 255, 255, 0.6), 
-                20px 0 60px rgba(0, 0, 0, 0.08), 
-                -20px 0 60px rgba(0, 0, 0, 0.08);
+    max-width: 500px; margin: 0 auto; min-height: 100vh;
+    display: none; flex-direction: column; background-color: #fff; position: relative;
+    box-shadow: 0 0 50px rgba(0,0,0,0.05);
 }
 
-/* 📍 Header: ม่วง Gradient */
+/* 📍 Header */
 .main-header {
     background: linear-gradient(135deg, var(--primary-start) 0%, var(--primary-end) 100%); 
-    padding: 20px 15px 15px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    text-align: center;
+    padding: 20px 15px 15px; position: sticky; top: 0; z-index: 100; text-align: center;
 }
+.main-header h1 { color: white; font-size: 1.4rem; margin: 0 0 10px; font-weight: 800; }
 
-.main-header h1 {
-    color: white !important;
-    font-size: 1.4rem;
-    margin: 0 0 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-}
+.room-badge-container { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; }
+.room-badge { background: rgba(0, 0, 0, 0.2); color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
+.btn-gen-panel { background: #facc15; border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; color: #1e293b; cursor: pointer; font-size: 0.8rem; }
 
 /* 🧭 Tab Navigation */
-.tab-nav {
-    display: flex;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    padding: 4px;
-    border-radius: 12px;
-    gap: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.tab-item {
-    flex: 1;
-    border: none;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.8) !important;
-    background: transparent;
-    transition: 0.3s;
-}
-
-.tab-item.active {
-    background: white !important;
-    color: var(--primary-start) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
+.tab-nav { display: flex; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px); padding: 4px; border-radius: 12px; gap: 4px; }
+.tab-item { flex: 1; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 700; color: rgba(255, 255, 255, 0.8); background: transparent; transition: 0.3s; }
+.tab-item.active { background: white; color: var(--primary-start); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
 
 /* 📝 Content Area */
-.content-area { padding: 20px 15px 120px; }
+.content-area { padding: 20px 15px 120px; flex-grow: 1; }
 .tab-content { display: none; }
 .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Elements */
+.label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-sub); }
+
+/* 🎯 กำหนดขนาด Input และ Button ให้มี Padding เท่ากัน (14px) */
+.main-input { width: 100%; padding: 14px 16px; border: 2px solid var(--border); border-radius: 12px; font-size: 1rem; outline: none; margin-bottom: 0; font-family: inherit; }
+.main-input:focus { border-color: var(--primary-start); }
+.main-input:disabled { background-color: #f1f5f9; color: var(--text-main); border-style: dashed; opacity: 0.8; }
+
+.btn-action-name-original {
+    border: 2px solid var(--border); background: #f1f5f9; border-radius: 12px;
+    width: 52px; height: 52px; color: #6366f1; cursor: pointer; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 
-/* ⌨️ Form Elements & Edit Button System */
-.label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-    color: var(--text-sub);
-}
+.action-inline-row { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
+.action-inline-row .main-input { flex: 1; }
+.action-inline-row .btn-inline-submit { width: auto; flex: 1.2; white-space: nowrap; }
 
-.main-input {
-    width: 100%;
-    padding: 14px 16px;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    font-size: 1rem;
-    outline: none;
-    transition: 0.2s;
-    font-family: inherit;
-}
-
-.main-input:focus { border-color: var(--primary-start); background: white; }
-
-/* 🚩 State: เมื่อช่องชื่อถูกล็อก */
-.main-input:disabled {
-    background-color: #f1f5f9;
-    color: var(--text-sub);
-    cursor: not-allowed;
-    border-style: dashed;
-    opacity: 0.7;
-}
-
-#btn-edit-name {
-    transition: all 0.2s ease;
-    border: 1px solid var(--border) !important;
-}
-
-#btn-edit-name:hover {
-    background: #eef2ff !important;
-    color: var(--primary-start) !important;
-}
-
-#btn-edit-name:active { transform: scale(0.95); }
-
-/* 🔘 Toggle & Submit Buttons */
 .action-toggle { display: flex; gap: 10px; margin-bottom: 20px; }
-.toggle-btn {
-    flex: 1; padding: 12px; border: 2px solid var(--border);
-    border-radius: 12px; background: white; font-weight: bold;
-    cursor: pointer; color: var(--text-sub);
-}
-.toggle-btn.active {
-    border-color: var(--primary-start); background: #eef2ff; color: var(--primary-start);
-}
+.toggle-btn { flex: 1; padding: 14px; border: 2px solid var(--border); border-radius: 12px; background: white; font-size: 1rem; font-weight: bold; cursor: pointer; color: var(--text-sub); }
+.toggle-btn.active { border-color: var(--primary-start); background: #eef2ff; color: var(--primary-start); }
 
-.btn-submit {
-    width: 100%; padding: 16px; border: none; border-radius: 14px;
-    font-size: 1.1rem; font-weight: bold; color: white; cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
+.btn-submit { width: 100%; padding: 14px; border: none; border-radius: 14px; font-size: 1rem; font-weight: bold; color: white; cursor: pointer; box-shadow: var(--shadow); transition: transform 0.1s; }
 .btn-withdraw { background: var(--withdraw); }
 .btn-return { background: var(--return); }
-.btn-submit:active { transform: scale(0.97); }
 
-/* 📊 Summary & History Table */
-.person-card, .log-card {
-    background: white; padding: 20px; border-radius: var(--radius);
-    margin-bottom: 15px; border: 1px solid var(--border);
-    box-shadow: var(--shadow);
-}
-
+/* Tables & Cards */
+.person-card { background: white; padding: 20px; border-radius: var(--radius); margin-bottom: 15px; border: 1px solid var(--border); box-shadow: var(--shadow); }
 .history-table { width: 100%; border-collapse: collapse; }
-.history-table th {
-    text-align: left; padding: 10px; font-size: 0.8rem;
-    color: var(--text-sub); border-bottom: 2px solid var(--border);
-}
+.history-table th { text-align: left; padding: 10px; font-size: 0.8rem; color: var(--text-sub); border-bottom: 2px solid var(--border); }
 .history-table td { padding: 14px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
-
-/* 🎨 Text Colors & Badges */
 .t-red { color: var(--withdraw); font-weight: bold; }
 .t-green { color: var(--return); font-weight: bold; }
 
-/* Badge รุ่นมือถือ */
-.history-table td small {
-    display: inline-block;
-    margin-top: 4px;
-    font-weight: 500;
-    color: #94a3af;
-    background: #f1f5f9;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 0.65rem;
-}
+.history-table td small { display: inline-block; margin-top: 4px; font-weight: 500; color: #94a3af; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; font-size: 0.65rem; }
+.history-table td small.rename-note { background: transparent; padding: 0; color: #6366f1; display: block; margin-top: 4px; font-style: italic; font-weight: bold; }
+.history-table td span.rename-log-text { color: #6366f1; font-size: 0.9rem; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; }
 
-/* Rename Note */
-.history-table td small[style*="italic"] {
-    background: transparent;
-    padding: 0;
-    color: #cbd5e1;
-    display: block;
-    margin-top: 2px;
-}
+.admin-controls-inline-row { margin-top: 25px; display: flex !important; flex-direction: row !important; gap: 10px !important; width: 100%; }
+.admin-controls-inline-row .btn-submit { flex: 1; margin-top: 0 !important; white-space: nowrap; }
 
-/* 📅 Filter Area & Date Input */
-.filter-area {
-    display: flex; align-items: center; gap: 12px; background: #ffffff;
-    padding: 10px 15px; border-radius: 14px; border: 1px solid var(--border);
-    margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-}
+.ux-net-bottom-box { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 14px; border-radius: 10px; margin-top: 12px; border-top: 1px dashed var(--border); }
 
-.filter-input-modern {
-    border: 2px solid var(--border) !important;
-    border-radius: 10px !important;
-    padding: 8px 12px !important;
-    font-family: inherit;
-    color: var(--text-main);
-    width: 100%;
-    appearance: none;
-    -webkit-appearance: none;
-}
+.log-card-original { background: white; padding: 20px; border-radius: var(--radius); margin-bottom: 15px; border: 1px solid var(--border); box-shadow: var(--shadow); position: relative; }
+.log-header-original { font-size: 1rem; color: var(--text-main); font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.log-grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+.log-grid-item { background: #f8fafc; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: bold; }
 
-.filter-input-modern:focus {
-    border-color: var(--primary-start) !important;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+/* 💰 Footer */
+.footer-summary { 
+    position: fixed; bottom: 0; left: 0; right: 0; 
+    max-width: 500px; margin: 0 auto; background: white; 
+    padding: 15px 20px; border-top: 1px solid var(--border); 
+    display: flex; justify-content: space-between; align-items: center; 
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 100; 
 }
+.footer-summary h2 { margin: 0; font-size: 1.4rem; font-weight: 900; }
 
-::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    filter: invert(48%) sepia(13%) saturate(3207%) hue-rotate(215deg) brightness(95%) contrast(80%);
-}
+/* หน้าดูประวัติแบบเจาะลึกที่หน้า Login */
+#detached-log-view { display: none; background: white; border-radius: 24px; padding: 25px 20px; width: 100%; max-width: 450px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); max-height: 85vh; overflow-y: auto; text-align: left; }
 
-.btn-clear-filter {
-    background: #f1f5f9; border: none; padding: 8px 16px;
-    border-radius: 8px; font-weight: 700; color: var(--text-sub); cursor: pointer;
-}
+/* 🌟 🛠️ CSS ระบบ Custom Popup Alert / Confirm */
+.custom-popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; animation: modalFadeIn 0.2s ease; }
+.custom-popup-box { background: white; width: 100%; max-width: 360px; padding: 25px 20px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); text-align: center; transform: scale(0.95); animation: modalScaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.custom-popup-icon { font-size: 2.8rem; margin-bottom: 15px; display: inline-block; }
+.custom-popup-icon.icon-error { color: var(--withdraw); }
+.custom-popup-icon.icon-confirm { color: var(--primary-start); }
+.custom-popup-icon.icon-success { color: var(--return); }
+.custom-popup-title { font-size: 1.15rem; font-weight: bold; color: var(--text-main); margin: 0 0 10px; }
+.custom-popup-msg { font-size: 0.95rem; color: var(--text-sub); line-height: 1.5; margin: 0 0 20px; }
+.custom-popup-btn-group { display: flex; gap: 10px; justify-content: center; }
+.custom-popup-btn { flex: 1; padding: 14px; border: none; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.custom-popup-btn-ok { background: var(--primary-start); color: white; }
+.custom-popup-btn-cancel { background: #f1f5f9; color: var(--text-sub); }
+.custom-popup-btn-danger { background: var(--withdraw); color: white; }
 
-/* 📜 Log Details */
-.log-details {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
-    margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border);
-}
-
-.log-details span {
-    background: #f8fafc; padding: 8px 12px; border-radius: 10px;
-    font-size: 0.85rem; display: flex; justify-content: space-between;
-}
-
-/* 💰 Sticky Footer */
-.footer-summary {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    max-width: 500px; margin: 0 auto; background: white;
-    padding: 15px 20px; border-top: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 100;
-}
-
-.footer-summary h2 { margin: 0; font-size: 1.4rem; font-weight: 900; letter-spacing: -0.5px; }
-
-/* 🔚 Nuclear Buttons */
-.btn-end-round {
-    width: 100%; padding: 14px; background: #1e293b; color: white;
-    border: none; border-radius: 12px; font-weight: bold; margin-top: 30px;
-}
-.empty-msg {
-    text-align: center;
-    padding: 40px 20px;
-    color: #94a3af; /* สีเทาอ่อนๆ */
-    font-size: 0.95rem;
-}
-/* ถ้ายังไม่มี fadeIn ในไฟล์เดิม ให้เพิ่มตัวนี้ไปด้วยครับ */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalScaleIn { from { transform: scale(0.95); } to { transform: scale(1); } }
