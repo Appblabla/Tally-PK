@@ -45,7 +45,7 @@ let state = {
 };
 
 // ==========================================
-// 🔒 1. Security & Navigation (ย้ายขึ้นมาบนสุดเพื่อให้ HTML เรียกใช้ได้ทันที)
+// 🔒 1. Security & Navigation
 // ==========================================
 window.switchLoginRole = (role) => {
     document.getElementById('roleMember').classList.toggle('active', role === 'member');
@@ -74,7 +74,6 @@ window.submitMemberLogin = () => {
 };
 
 window.unlockApplication = () => {
-    // ซ่อนหน้า Login และแสดงหน้าหลักอย่างเด็ดขาด ป้องกัน CSS ซ้อนทับบังปุ่ม
     document.getElementById('login-overlay').style.setProperty('display', 'none', 'important');
     document.getElementById('main-app').style.display = 'flex';
     
@@ -97,7 +96,7 @@ window.unlockApplication = () => {
     }
     window.updateApplicationUI();
     window.manageFooterVisibility('record'); 
-    window.setMode('withdraw'); // ตั้งค่าเริ่มต้นหน้าลงยอดให้เปิดมาเจอโหมดเบิกเงินทันที ไม่เจอหน้าว่างเปล่า
+    window.setMode('withdraw'); 
 };
 
 window.forceLockApplication = () => {
@@ -111,15 +110,12 @@ window.forceLockApplication = () => {
 // ==========================================
 // 🔥 2. Firebase Listeners (Real-time Sync)
 // ==========================================
-
-// ดึงรายการเบิกคืน (Transactions)
 onValue(ref(db, 'transactions'), (snapshot) => {
     const data = snapshot.val();
     state.transactions = data ? Object.values(data) : [];
     window.updateApplicationUI();
 });
 
-// ดึงประวัติการจบรอบ (Sessions)
 onValue(ref(db, 'sessions'), (snapshot) => {
     const data = snapshot.val();
     state.sessions = data ? Object.values(data).reverse() : [];
@@ -127,17 +123,14 @@ onValue(ref(db, 'sessions'), (snapshot) => {
     window.renderDetachedLogContent();
 });
 
-// ระบบดูแลห้องและเตือนโดนดีด
 onValue(ref(db, 'systemConfig'), (snapshot) => {
     const data = snapshot.val();
     if(data) {
-        // อัปเดตเลขห้องใหม่
         if(data.roomCode && data.roomCode !== state.roomCode) {
             state.roomCode = data.roomCode;
             document.getElementById('roomCodeDisplay').innerText = state.roomCode;
         }
         
-        // ถ้าระบบโดน Reset สั่งดีดคนออก
         if(data.isResetting && state.currentRole === 'member' && document.getElementById('login-overlay').style.display === 'none') {
             window.showCustomAlert(
                 "icon-confirm", 
@@ -389,24 +382,29 @@ window.buildLogHtmlStructure = (filterDate, containerElement) => {
         return;
     }
 
-    containerElement.innerHTML = listToRender.map(s => `
-        <div class="log-card-original">
-            <div class="log-header-original">🕒 จบเมื่อ: ${s.date}</div>
-            <div style="font-weight: 800; font-size: 1.1rem; color: ${s.total >= 0 ? 'var(--return)' : 'var(--withdraw)'}">
-                ยอดสุทธิรอบนี้: ${s.total >= 0 ? '+' : ''}${s.total.toLocaleString()} ฿
+    containerElement.innerHTML = listToRender.map(s => {
+        // ✅ ปรับปรุงจุดนี้เพื่อดักบั๊ค: ถ้า members เป็น undefined/null ให้ใช้ค่าตั้งต้นเป็น Array ว่าง [] เสมอ หน้าเว็บจะได้ไม่ค้าง
+        const currentMembers = s.members ? s.members : [];
+
+        return `
+            <div class="log-card-original">
+                <div class="log-header-original">🕒 จบเมื่อ: ${s.date}</div>
+                <div style="font-weight: 800; font-size: 1.1rem; color: ${s.total >= 0 ? 'var(--return)' : 'var(--withdraw)'}">
+                    ยอดสุทธิรอบนี้: ${s.total >= 0 ? '+' : ''}${s.total.toLocaleString()} ฿
+                </div>
+                <div class="log-grid-container">
+                    ${currentMembers.map(m => `
+                        <div class="log-grid-item">
+                            <span>${m.name}:</span>
+                            <span style="color: ${m.amount >= 0 ? 'var(--return)' : 'var(--withdraw)'}">
+                                ${m.amount >= 0 ? '+' : ''}${m.amount.toLocaleString()}
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
-            <div class="log-grid-container">
-                ${s.members.map(m => `
-                    <div class="log-grid-item">
-                        <span>${m.name}:</span>
-                        <span style="color: ${m.amount >= 0 ? 'var(--return)' : 'var(--withdraw)'}">
-                            ${m.amount >= 0 ? '+' : ''}${m.amount.toLocaleString()}
-                        </span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 };
 
 window.clearMainLogFilter = () => {
@@ -444,7 +442,6 @@ window.executeResetRoomActionComplete = () => {
     }
     const newCode = Math.floor(1000 + Math.random() * 9000).toString(); 
     
-    // ✅ เปลี่ยนมาใช้ update แทน set เพื่อเสถียรภาพ ป้องกันโครงสร้างส่วนอื่นพัง
     update(ref(db, 'systemConfig'), { roomCode: newCode, isResetting: true }).then(() => {
         setTimeout(() => update(ref(db, 'systemConfig'), { isResetting: false }), 5000); 
         window.showCustomAlert("icon-success", "Reset สำเร็จ", `ระบบทำการจบรอบ ล้างรายการ และสุ่มรหัสห้องใหม่เรียบร้อย! รหัสห้องถัดไปคือ: ${newCode}`);
