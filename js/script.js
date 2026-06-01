@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// 🚩 Firebase Configuration
+// 🚩 Firebase Configuration (ชุดเดิมของคุณ)
 const firebaseConfig = {
     apiKey: "AIzaSyCr9fXfx9m9cQ9_N_VhE3VTLbgdk3ZXRKM",
     authDomain: "tally-pk.firebaseapp.com",
@@ -44,16 +44,82 @@ let state = {
     sessions: [] 
 };
 
-// --- 🔥 Firebase Listeners (Real-time Sync) ---
+// ==========================================
+// 🔒 1. Security & Navigation (ย้ายขึ้นมาบนสุดเพื่อให้ HTML เรียกใช้ได้ทันที)
+// ==========================================
+window.switchLoginRole = (role) => {
+    document.getElementById('roleMember').classList.toggle('active', role === 'member');
+    document.getElementById('roleAdmin').classList.toggle('active', role === 'admin');
+    document.getElementById('member-form').style.display = role === 'member' ? 'block' : 'none';
+    document.getElementById('admin-form').style.display = role === 'admin' ? 'block' : 'none';
+    document.getElementById('btnAdminClearDetached').style.display = role === 'admin' ? 'block' : 'none';
+};
 
-// 1. ดึงรายการเบิกคืน (Transactions)
+window.submitAdminLogin = () => {
+    if(document.getElementById('adminPasswordInput').value === '1401') { 
+        state.currentRole = 'admin';
+        window.unlockApplication();
+    } else {
+        window.showCustomAlert("icon-error", "สิทธิ์การเข้าถึง", "รหัสผ่านไม่ถูกต้อง");
+    }
+};
+
+window.submitMemberLogin = () => {
+    if(document.getElementById('roomCodeInput').value === state.roomCode) {
+        state.currentRole = 'member';
+        window.unlockApplication();
+    } else {
+        window.showCustomAlert("icon-error", "ระบุเลขห้อง", "เลขห้องไม่ถูกต้อง ไม่สามารถเข้าถึงห้องนี้ได้!");
+    }
+};
+
+window.unlockApplication = () => {
+    // ซ่อนหน้า Login และแสดงหน้าหลักอย่างเด็ดขาด ป้องกัน CSS ซ้อนทับบังปุ่ม
+    document.getElementById('login-overlay').style.setProperty('display', 'none', 'important');
+    document.getElementById('main-app').style.display = 'flex';
+    
+    document.getElementById('adminGenBtn').style.display = state.currentRole === 'admin' ? 'block' : 'none';
+    document.getElementById('adminControlsBlock').style.display = state.currentRole === 'admin' ? 'flex' : 'none';
+    document.getElementById('btnAdminClearInside').style.display = state.currentRole === 'admin' ? 'block' : 'none';
+    
+    document.getElementById('roomCodeDisplay').innerText = state.roomCode;
+    
+    const savedName = localStorage.getItem('myTallyName');
+    const nameInput = document.getElementById('userName');
+    if (savedName && savedName.trim() !== "") {
+        nameInput.value = savedName;
+        nameInput.disabled = true;
+        window.setButtonToEditMode(); 
+    } else {
+        nameInput.value = '';
+        nameInput.disabled = false;
+        window.setButtonToSaveMode(); 
+    }
+    window.updateApplicationUI();
+    window.manageFooterVisibility('record'); 
+    window.setMode('withdraw'); // ตั้งค่าเริ่มต้นหน้าลงยอดให้เปิดมาเจอโหมดเบิกเงินทันที ไม่เจอหน้าว่างเปล่า
+};
+
+window.forceLockApplication = () => {
+    document.getElementById('login-overlay').style.display = 'flex';
+    document.getElementById('main-app').style.setProperty('display', 'none', 'important');
+    document.getElementById('roomCodeInput').value = '';
+    document.getElementById('adminPasswordInput').value = '';
+    window.closeDetachedLogView();
+};
+
+// ==========================================
+// 🔥 2. Firebase Listeners (Real-time Sync)
+// ==========================================
+
+// ดึงรายการเบิกคืน (Transactions)
 onValue(ref(db, 'transactions'), (snapshot) => {
     const data = snapshot.val();
     state.transactions = data ? Object.values(data) : [];
     window.updateApplicationUI();
 });
 
-// 2. ดึงประวัติการจบรอบ (Sessions)
+// ดึงประวัติการจบรอบ (Sessions)
 onValue(ref(db, 'sessions'), (snapshot) => {
     const data = snapshot.val();
     state.sessions = data ? Object.values(data).reverse() : [];
@@ -61,7 +127,7 @@ onValue(ref(db, 'sessions'), (snapshot) => {
     window.renderDetachedLogContent();
 });
 
-// 3. ระบบดูแลห้องและเตือนโดนดีด
+// ระบบดูแลห้องและเตือนโดนดีด
 onValue(ref(db, 'systemConfig'), (snapshot) => {
     const data = snapshot.val();
     if(data) {
@@ -83,8 +149,9 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
     }
 });
 
-
-// 🌟 🛠️ Custom Popup Engine
+// ==========================================
+// 🌟 🛠️ 3. Custom Popup Engine
+// ==========================================
 window.showCustomAlert = (iconClass, title, message, onOkClick = null) => {
     const overlay = document.getElementById('globalPopupContainer');
     const iconContainer = document.getElementById('popupIcon');
@@ -135,68 +202,9 @@ window.showCustomConfirm = (title, message, onConfirmClick) => {
     };
 };
 
-
-// 🔒 Security & Navigation
-window.switchLoginRole = (role) => {
-    document.getElementById('roleMember').classList.toggle('active', role === 'member');
-    document.getElementById('roleAdmin').classList.toggle('active', role === 'admin');
-    document.getElementById('member-form').style.display = role === 'member' ? 'block' : 'none';
-    document.getElementById('admin-form').style.display = role === 'admin' ? 'block' : 'none';
-    document.getElementById('btnAdminClearDetached').style.display = role === 'admin' ? 'block' : 'none';
-};
-
-window.submitAdminLogin = () => {
-    if(document.getElementById('adminPasswordInput').value === '1401') { 
-        state.currentRole = 'admin';
-        window.unlockApplication();
-    } else {
-        window.showCustomAlert("icon-error", "สิทธิ์การเข้าถึง", "รหัสผ่านไม่ถูกต้อง");
-    }
-};
-
-window.submitMemberLogin = () => {
-    if(document.getElementById('roomCodeInput').value === state.roomCode) {
-        state.currentRole = 'member';
-        window.unlockApplication();
-    } else {
-        window.showCustomAlert("icon-error", "ระบุเลขห้อง", "เลขห้องไม่ถูกต้อง ไม่สามารถเข้าถึงห้องนี้ได้!");
-    }
-};
-
-window.unlockApplication = () => {
-    document.getElementById('login-overlay').style.display = 'none';
-    document.getElementById('main-app').style.display = 'flex';
-    document.getElementById('adminGenBtn').style.display = state.currentRole === 'admin' ? 'block' : 'none';
-    document.getElementById('adminControlsBlock').style.display = state.currentRole === 'admin' ? 'flex' : 'none';
-    document.getElementById('btnAdminClearInside').style.display = state.currentRole === 'admin' ? 'block' : 'none';
-    
-    document.getElementById('roomCodeDisplay').innerText = state.roomCode;
-    
-    const savedName = localStorage.getItem('myTallyName');
-    const nameInput = document.getElementById('userName');
-    if (savedName && savedName.trim() !== "") {
-        nameInput.value = savedName;
-        nameInput.disabled = true;
-        window.setButtonToEditMode(); 
-    } else {
-        nameInput.value = '';
-        nameInput.disabled = false;
-        window.setButtonToSaveMode(); 
-    }
-    window.updateApplicationUI();
-    window.manageFooterVisibility('record'); 
-};
-
-window.forceLockApplication = () => {
-    document.getElementById('login-overlay').style.display = 'flex';
-    document.getElementById('main-app').style.display = 'none';
-    document.getElementById('roomCodeInput').value = '';
-    document.getElementById('adminPasswordInput').value = '';
-    window.closeDetachedLogView();
-};
-
-
-// 📝 Core Actions
+// ==========================================
+// 📝 4. Core Actions
+// ==========================================
 window.toggleNameState = () => {
     const nameInput = document.getElementById('userName');
     if (nameInput.disabled) {
@@ -218,7 +226,7 @@ window.toggleNameState = () => {
                 time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
                 name: newName, type: 'rename', oldName: oldName, device: getDeviceInfo()
             };
-            push(ref(db, 'transactions'), renameTx); // 🔥 เซฟออนไลน์
+            push(ref(db, 'transactions'), renameTx); 
         }
         localStorage.setItem('myTallyName', newName);
         localStorage.removeItem('pre_rename_hold'); 
@@ -241,7 +249,7 @@ window.setButtonToEditMode = () => {
 
 window.actionGenerateRoomCode = () => {
     const newCode = Math.floor(1000 + Math.random() * 9000).toString();
-    set(ref(db, 'systemConfig/roomCode'), newCode).then(() => { // 🔥 เซฟออนไลน์
+    update(ref(db, 'systemConfig'), { roomCode: newCode }).then(() => { 
         window.showCustomAlert("icon-success", "สำเร็จ", `เปลี่ยนเลขห้องสำเร็จเป็น: ${newCode}`);
     });
 };
@@ -302,10 +310,12 @@ window.executeSaveEntry = (amount) => {
         name: currentInputValue, type: state.currentMode,
         amount: Math.abs(parseInt(amount)), device: getDeviceInfo(), renameNote: calculatedRenameNote 
     };
-    push(ref(db, 'transactions'), newTx); // 🔥 เซฟออนไลน์
+    push(ref(db, 'transactions'), newTx); 
 };
 
-// 📊 UI Generators
+// ==========================================
+// 📊 5. UI Generators
+// ==========================================
 window.updateApplicationUI = () => {
     const body = document.getElementById('historyBody');
     if(!state.transactions || state.transactions.length === 0) {
@@ -409,7 +419,9 @@ window.clearDetachedLogSearch = () => {
     window.renderDetachedLogContent();
 };
 
-// 🏁 Admin Actions (Reset & End Round)
+// ==========================================
+// 🏁 6. Admin Actions (Reset & End Round)
+// ==========================================
 window.executeEndRoundOnly = () => {
     if(!state.transactions || state.transactions.length === 0) {
         return window.showCustomAlert("icon-error", "ไม่มีรายการ", "ไม่สามารถจบรอบได้เนื่องจากยังไม่มีรายการบันทึก");
@@ -432,9 +444,9 @@ window.executeResetRoomActionComplete = () => {
     }
     const newCode = Math.floor(1000 + Math.random() * 9000).toString(); 
     
-    // 🔥 สั่ง Reset ออนไลน์เพื่อให้เครื่องอื่นหลุด
-    set(ref(db, 'systemConfig'), { roomCode: newCode, isResetting: true }).then(() => {
-        setTimeout(() => set(ref(db, 'systemConfig/isResetting'), false), 5000); // ยกเลิกการดีดหลัง 5 วินาที
+    // ✅ เปลี่ยนมาใช้ update แทน set เพื่อเสถียรภาพ ป้องกันโครงสร้างส่วนอื่นพัง
+    update(ref(db, 'systemConfig'), { roomCode: newCode, isResetting: true }).then(() => {
+        setTimeout(() => update(ref(db, 'systemConfig'), { isResetting: false }), 5000); 
         window.showCustomAlert("icon-success", "Reset สำเร็จ", `ระบบทำการจบรอบ ล้างรายการ และสุ่มรหัสห้องใหม่เรียบร้อย! รหัสห้องถัดไปคือ: ${newCode}`);
     });
 };
@@ -455,24 +467,25 @@ window.processSaveCurrentRoundToHistory = () => {
     let membersLog = Object.keys(summaryMap).map(k => ({ name: summaryMap[k].name, amount: summaryMap[k].return - summaryMap[k].withdraw }));
     const now = new Date();
     
-    // 🔥 ส่งประวัติใหม่ขึ้น Firebase
     push(ref(db, 'sessions'), {
         id: Date.now(), date: now.toLocaleString('th-TH'), pureDate: now.toISOString().split('T')[0],
         total: total, members: membersLog
     });
     
-    remove(ref(db, 'transactions')); // 🔥 ล้างรายการเดิมออนไลน์
+    remove(ref(db, 'transactions')); 
 };
 
 window.askClearAllSessions = () => {
     window.showCustomConfirm("🚨 ยืนยันการลบประวัติ", "คุณแน่ใจใช่หรือไม่ว่าต้องการลบประวัติย้อนหลังทุกรอบทิ้งถาวร?", () => {
-        remove(ref(db, 'sessions')).then(() => { // 🔥 ล้างประวัติออนไลน์
+        remove(ref(db, 'sessions')).then(() => { 
             window.showCustomAlert("icon-success", "ลบเรียบร้อย", "ลบประวัติรอบย้อนหลังทั้งหมดเกลี้ยงตู้ถาวรสำเร็จ!");
         });
     });
 };
 
-// 🧭 Views toggles
+// ==========================================
+// 🧭 7. Views Toggles
+// ==========================================
 window.openDetachedLogView = () => {
     document.getElementById('loginMainCard').style.display = 'none';
     document.getElementById('detached-log-view').style.display = 'block';
@@ -495,9 +508,3 @@ window.switchTab = (tabId) => {
     document.getElementById(`btn-${tabId}`).classList.add('active');
     window.manageFooterVisibility(tabId); 
 };
-
-// รอให้โหลด DOM เสร็จก่อนใส่ Event
-document.addEventListener('DOMContentLoaded', () => {
-    const detachedLogDateInput = document.getElementById('detachedLogDate');
-    if (detachedLogDateInput) detachedLogDateInput.addEventListener('change', window.renderDetachedLogContent);
-});
