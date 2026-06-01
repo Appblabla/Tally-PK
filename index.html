@@ -6,8 +6,7 @@
     <title>Tracker PK - Complete Stable System</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <link rel="stylesheet" href="css/style.css?v=5.11">
+    <link rel="stylesheet" href="css/style.css?v=5.12">
 </head>
 <body>
 
@@ -26,22 +25,22 @@
         <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 25px;">กรุณายืนยันตัวตนเพื่อเข้าสู่ระบบบันทึกยอด</p>
         
         <div class="role-selector">
-            <button id="roleMember" class="role-btn active" onclick="switchLoginRole('member')">👤 สมาชิก</button>
-            <button id="roleAdmin" class="role-btn" onclick="switchLoginRole('admin')">🔑 ผู้ดูแล</button>
+            <button id="roleMember" class="role-btn active" onclick="window.switchLoginRole('member')">👤 สมาชิก</button>
+            <button id="roleAdmin" class="role-btn" onclick="window.switchLoginRole('admin')">🔑 ผู้ดูแล</button>
         </div>
         
         <div id="member-form">
             <input type="number" id="roomCodeInput" class="main-input" placeholder="ระบุเลขห้อง 4 หลัก" inputmode="numeric">
-            <button class="btn-submit" style="background: var(--primary-start); margin-top: 15px;" onclick="submitMemberLogin()">เข้าสู่ห้องทำงาน</button>
+            <button class="btn-submit" style="background: var(--primary-start); margin-top: 15px;" onclick="window.submitMemberLogin()">เข้าสู่ห้องทำงาน</button>
         </div>
 
         <div id="admin-form" style="display: none;">
             <input type="password" id="adminPasswordInput" class="main-input" placeholder="ระบุรหัสผ่านผู้ดูแล">
-            <button class="btn-submit" style="background: #1e293b; margin-top: 15px;" onclick="submitAdminLogin()">ตรวจสอบสิทธิ์</button>
+            <button class="btn-submit" style="background: #1e293b; margin-top: 15px;" onclick="window.submitAdminLogin()">ตรวจสอบสิทธิ์</button>
         </div>
 
         <div style="margin-top: 25px;">
-            <a href="javascript:void(0)" onclick="openDetachedLogView()" style="color: var(--text-sub); text-decoration: underline; font-size: 0.95rem; font-weight: bold;">
+            <a href="javascript:void(0)" onclick="window.openDetachedLogView()" style="color: var(--text-sub); text-decoration: underline; font-size: 0.95rem; font-weight: bold;">
                 <i class="fa-solid fa-clock-rotate-left"></i> ดูประวัติรอบย้อนหลัง
             </a>
         </div>
@@ -50,13 +49,13 @@
     <div id="detached-log-view">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--border); padding-bottom: 10px;">
             <h3 style="margin: 0;"><i class="fa-solid fa-book"></i> ประวัติการจบยอดทั้งหมด</h3>
-            <button onclick="closeDetachedLogView()" style="background: #f1f5f9; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">ปิด</button>
+            <button onclick="window.closeDetachedLogView()" style="background: #f1f5f9; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">ปิด</button>
         </div>
         
         <div style="display: flex; gap: 8px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
             <input type="date" id="detachedLogDate" class="main-input" style="flex: 1; padding: 10px; min-width: 140px;">
-            <button onclick="clearDetachedLogSearch()" style="background:#64748b; border:none; color:white; border-radius:12px; padding:14px 15px; cursor:pointer; font-weight: bold;">ล้าง</button>
-            <button id="btnAdminClearDetached" style="display: none; background: var(--withdraw); border: none; color: white; border-radius: 12px; padding: 14px 15px; cursor: pointer; font-weight: bold;" onclick="askClearAllSessions()"><i class="fa-solid fa-trash-can"></i> ล้างทั้งหมด</button>
+            <button onclick="window.clearDetachedLogSearch()" style="background:#64748b; border:none; color:white; border-radius:12px; padding:14px 15px; cursor:pointer; font-weight: bold;">ล้าง</button>
+            <button id="btnAdminClearDetached" style="display: none; background: var(--withdraw); border: none; color: white; border-radius: 12px; padding: 14px 15px; cursor: pointer; font-weight: bold;" onclick="window.askClearAllSessions()"><i class="fa-solid fa-trash-can"></i> ล้างทั้งหมด</button>
         </div>
         <div id="detachedLogContentList"></div>
     </div>
@@ -68,15 +67,15 @@
         
         <div class="room-badge-container">
             <div class="room-badge">🔐 เลขห้องปัจจุบัน: <span id="roomCodeDisplay">----</span></div>
-            <button id="adminGenBtn" class="btn-gen-panel" onclick="actionGenerateRoomCode()" style="display: none;">
+            <button id="adminGenBtn" class="btn-gen-panel" onclick="window.actionGenerateRoomCode()" style="display: none;">
                 <i class="fa-solid fa-rotate"></i> สุ่มเลขใหม่
             </button>
         </div>
 
         <div class="tab-nav">
-            <button id="btn-record" class="tab-item active" onclick="switchTab('record')">ลงยอด</button>
-            <button id="btn-summary" class="tab-item" onclick="switchTab('summary')">สรุปรายคน</button>
-            <button id="btn-log" class="tab-item" onclick="switchTab('log')">ประวัติรอบ</button>
+            <button id="btn-record" class="tab-item active" onclick="window.switchTab('record')">ลงยอด</button>
+            <button id="btn-summary" class="tab-item" onclick="window.switchTab('summary')">สรุปรายคน</button>
+            <button id="btn-log" class="tab-item" onclick="window.switchTab('log')">ประวัติรอบ</button>
         </div>
     </header>
 
@@ -86,25 +85,25 @@
                 <label class="label">👤 ชื่อผู้ใช้งานเครื่องนี้</label>
                 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 15px;">
                     <input type="text" id="userName" class="main-input" placeholder="กรอกชื่อของคุณ..." autocomplete="off" style="flex: 1;">
-                    <button id="btn-name-toggle" class="btn-action-name-original" onclick="toggleNameState()">
+                    <button id="btn-name-toggle" class="btn-action-name-original" onclick="window.toggleNameState()">
                         <i id="btn-name-icon" class="fa-solid fa-pen-to-square"></i>
                     </button>
                 </div>
             </div>
 
             <div class="action-toggle" style="margin-top: 20px;">
-                <button id="modeWithdraw" class="toggle-btn" onclick="setMode('withdraw')">เบิกเงิน</button>
-                <button id="modeReturn" class="toggle-btn" onclick="setMode('return')">คืนเงิน</button>
+                <button id="modeWithdraw" class="toggle-btn" onclick="window.setMode('withdraw')">เบิกเงิน</button>
+                <button id="modeReturn" class="toggle-btn" onclick="window.setMode('return')">คืนเงิน</button>
             </div>
 
             <div id="withdraw-section" class="action-inline-row" style="display: none;">
-                <input type="number" id="withdrawAmount" class="main-input" placeholder="ระบุยอดเบิก (Default 200)" inputmode="numeric" oninput="updateWithdrawButtonText()">
-                <button id="btn-withdraw-submit" class="btn-submit btn-withdraw btn-inline-submit" onclick="executeWithdraw()">บันทึกเบิก <span id="btnWithdrawTextValue">200</span> ฿</button>
+                <input type="number" id="withdrawAmount" class="main-input" placeholder="ระบุยอดเบิก (Default 200)" inputmode="numeric" oninput="window.updateWithdrawButtonText()">
+                <button id="btn-withdraw-submit" class="btn-submit btn-withdraw btn-inline-submit" onclick="window.executeWithdraw()">บันทึกเบิก <span id="btnWithdrawTextValue">200</span> ฿</button>
             </div>
 
             <div id="return-section" class="action-inline-row" style="display: none;">
                 <input type="number" id="returnAmount" class="main-input" placeholder="ระบุยอดเงินที่คืน" inputmode="numeric">
-                <button class="btn-submit btn-return btn-inline-submit" onclick="executeReturn()">บันทึกคืนเงิน</button>
+                <button class="btn-submit btn-return btn-inline-submit" onclick="window.executeReturn()">บันทึกคืนเงิน</button>
             </div>
 
             <div class="history-container" style="margin-top: 25px;">
@@ -128,10 +127,10 @@
             <div id="summaryList"></div>
             
             <div id="adminControlsBlock" class="admin-controls-inline-row" style="display: none;">
-                <button class="btn-submit" style="background: #1e293b;" onclick="executeEndRoundOnly()">
+                <button class="btn-submit" style="background: #1e293b;" onclick="window.executeEndRoundOnly()">
                     🏁 จบยอดรอบนี้
                 </button>
-                <button class="btn-submit" style="background: #6366f1;" onclick="askResetRoundPopup()">
+                <button class="btn-submit" style="background: #6366f1;" onclick="window.askResetRoundPopup()">
                     🔐 Reset ห้อง
                 </button>
             </div>
@@ -140,9 +139,9 @@
         <div id="tab-log" class="tab-content">
             <label class="label">📜 ประวัติการจบยอด</label>
             <div style="display: flex; gap: 8px; margin-bottom: 15px; align-items: center;">
-                <input type="date" id="mainLogDateFilter" class="main-input" style="flex: 1;" onchange="renderApplicationLogs()">
-                <button onclick="clearMainLogFilter()" style="background:#64748b; border:none; color:white; border-radius:12px; padding:14px 20px; cursor:pointer; font-weight:bold;">ล้าง</button>
-                <button id="btnAdminClearInside" style="display: none; background: var(--withdraw); border: none; color: white; border-radius: 12px; padding: 14px 20px; cursor: pointer; font-weight: bold;" onclick="askClearAllSessions()"><i class="fa-solid fa-trash-can"></i> ล้างทั้งหมด</button>
+                <input type="date" id="mainLogDateFilter" class="main-input" style="flex: 1;" onchange="window.renderApplicationLogs()">
+                <button onclick="window.clearMainLogFilter()" style="background:#64748b; border:none; color:white; border-radius:12px; padding:14px 20px; cursor:pointer; font-weight:bold;">ล้าง</button>
+                <button id="btnAdminClearInside" style="display: none; background: var(--withdraw); border: none; color: white; border-radius: 12px; padding: 14px 20px; cursor: pointer; font-weight: bold;" onclick="window.askClearAllSessions()"><i class="fa-solid fa-trash-can"></i> ล้างทั้งหมด</button>
             </div>
             <div id="logList"></div>
         </div>
@@ -157,6 +156,6 @@
     </footer>
 </div>
 
-<script src="js/script.js?v=5.11"></script>
+<script type="module" src="js/script.js?v=5.12" defer></script>
 </body>
 </html>
