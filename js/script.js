@@ -15,11 +15,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🆔 Device ID Setup
+// 🆔 Device Fingerprint Setup (สร้าง ID จากฮาร์ดแวร์เครื่อง เพื่อให้ข้ามเบราว์เซอร์แล้วได้คีย์เดิม)
+const getDeviceFingerprint = () => {
+    const screenWidth = window.screen.width || 0;
+    const screenHeight = window.screen.height || 0;
+    const pixelRatio = window.devicePixelRatio || 1;
+    const ua = navigator.userAgent;
+    
+    let os = "Device";
+    if (/iPhone/i.test(ua)) os = "iPhone";
+    else if (/iPad/i.test(ua)) os = "iPad";
+    else if (/Android/i.test(ua)) os = "Android";
+    else if (/Macintosh/i.test(ua)) os = "Mac";
+    else if (/Windows/i.test(ua)) os = "Windows";
+
+    // สร้าง ID แฝงที่แชร์ร่วมกันได้ระหว่าง Chrome/Safari บนเครื่องเดียวกัน
+    // โดยคำนวณจาก ระบบปฏิบัติการ + ความกว้างหน้าจอ + ความสูงหน้าจอ
+    const hardwareKey = `${os}-${screenWidth}x${screenHeight}-${pixelRatio}`;
+    return hardwareKey;
+};
+
+// ดึงไอดีเครื่องแบบถาวร (ถ้าบราวเซอร์ล้าง LocalStorage ก็ยังมีคีย์สำรองจาก Fingerprint)
 if (!localStorage.getItem('myDeviceID')) {
     localStorage.setItem('myDeviceID', 'dev-' + Date.now() + Math.random().toString(36).substr(2, 5));
 }
 const myDeviceID = localStorage.getItem('myDeviceID');
+const hardwareFingerprint = getDeviceFingerprint();
 
 const getDeviceInfo = () => {
     const ua = navigator.userAgent;
@@ -31,7 +52,6 @@ const getDeviceInfo = () => {
         return "Android";
     }
     if (/Macintosh/i.test(ua)) {
-        // 💡 อัปเดตเพิ่ม: แยกคีย์ให้ชัดเจนระหว่าง Chrome บน Mac และ Safari บน Mac หน้าเว็บจะได้รู้ความต่าง
         if (/Chrome/i.test(ua) && !/Chromium/i.test(ua)) return "Mac (Chrome)";
         if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return "Mac (Safari)";
         return "Mac";
@@ -246,7 +266,9 @@ window.toggleNameState = () => {
         const oldName = localStorage.getItem('pre_rename_hold') || localStorage.getItem('myTallyName');
         if (oldName && oldName !== newName && oldName.trim() !== "") {
             const renameTx = {
-                id: Date.now(), deviceId: myDeviceID,
+                id: Date.now(), 
+                deviceId: myDeviceID,
+                fingerprint: hardwareFingerprint, // แนบฟิงเกอร์ปริ้นท์ไปด้วย
                 time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
                 name: newName, type: 'rename', oldName: oldName, device: getDeviceInfo()
             };
@@ -329,7 +351,9 @@ window.executeSaveEntry = (amount) => {
     window.setButtonToEditMode();
 
     const newTx = {
-        id: Date.now(), deviceId: myDeviceID, 
+        id: Date.now(), 
+        deviceId: myDeviceID, 
+        fingerprint: hardwareFingerprint, // ✅ ส่งคีย์โรงงานเครื่องขึ้นระบบไปด้วย
         time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
         name: currentInputValue, type: state.currentMode,
         amount: Math.abs(parseInt(amount)), device: getDeviceInfo(), renameNote: calculatedRenameNote 
@@ -351,9 +375,7 @@ window.updateApplicationUI = () => {
             }
             const isW = t.type === 'withdraw';
             const currentAmount = t.amount ? t.amount : 0;
-            
-            // 💡 ปรับการแสดงผลประวัติตารางตรงหน้าแรก: แยกชื่อกับเครื่องให้คลีนขึ้นด้วยวงเล็บ ()
-            return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td><strong>${t.name}</strong> <span style="font-size:0.75rem; color:var(--text-sub); font-weight:normal;">(${t.device})</span>${t.renameNote ? `<br><small class="rename-note"><i class="fa-solid fa-clock-rotate-left"></i> ${t.renameNote}</small>` : ''}</td><td class="${isW ? 't-red' : 't-green'}">${isW ? '-' : '+'}${currentAmount.toLocaleString()}</td><td>${currentAmount / 200} ขีด</td></tr>`;
+            return `<tr><td style="font-size:0.75rem; color:#94a3af;">${t.time}</td><td><strong>${t.name}</strong> <span style="font-size:0.75rem; color:var(--text-sub); font-weight:normal;">(${t.device})</span></td><td class="${isW ? 't-red' : 't-green'}">${isW ? '-' : '+'}${currentAmount.toLocaleString()}</td><td>${currentAmount / 200} ขีด</td></tr>`;
         }).join('');
     }
 
@@ -364,8 +386,13 @@ window.updateApplicationUI = () => {
         state.transactions.forEach(t => {
             if(!t.name || t.type === 'rename') return;
             
-            // ✅ จุดฟิกบั๊ค: ตัดช่องว่างและแปลงเป็นพิมพ์เล็กเพื่อใช้ดักจับคีย์ชื่อเพียว ๆ ข้ามทุกเบราว์เซอร์
-            const key = t.name.trim().toLowerCase();
+            // ✅ ดักจับขั้นเทพ: แยกคีย์กลุ่มด้วย (Fingerprint ของเครื่อง + ชื่อที่พิมพ์แบบคลีน)
+            // วิธีนี้ทำให้:
+            // 1. ถ้าคนละเครื่อง ชื่อซ้ำกัน ->Fingerprint ต่างกัน -> ยอดแยกกัน ไม่รวมมั่วซั่ว!
+            // 2. ถ้าเครื่องเดียวกัน เปิดคนละบราวเซอร์ พิมพ์ชื่อเดียวกัน -> Fingerprint เหมือนกัน -> ยอดยุบรวมกันให้ทันที!
+            const cleanName = t.name.trim().toLowerCase();
+            const machineKey = t.fingerprint ? t.fingerprint : (t.deviceId || 'unknown');
+            const key = `${machineKey}_${cleanName}`;
             
             if(!summaryMap[key]) {
                 summaryMap[key] = { name: t.name.trim(), withdraw: 0, return: 0, lastTime: t.id };
@@ -504,8 +531,10 @@ window.processSaveCurrentRoundToHistory = () => {
     state.transactions.forEach(t => {
         if(!t.name || t.type === 'rename') return;
         
-        // ✅ ปรับแก้ตรงนี้ให้จับคู่ชื่อคลีนเพียว ๆ ตอนบันทึกย้ายลงประวัติคลังเก็บ Log ย้อนหลัง
-        const key = t.name.trim().toLowerCase();
+        // ผูก Logic คลีนนิ่งคีย์ตอนบันทึกลงประวัติคลัง Log ถาวรด้วยเช่นกัน
+        const cleanName = t.name.trim().toLowerCase();
+        const machineKey = t.fingerprint ? t.fingerprint : (t.deviceId || 'unknown');
+        const key = `${machineKey}_${cleanName}`;
         
         if(!summaryMap[key]) {
             summaryMap[key] = { name: t.name.trim(), withdraw: 0, return: 0, lastTime: t.id };
