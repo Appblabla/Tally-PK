@@ -104,13 +104,32 @@ window.unlockApplication = () => {
 };
 
 window.forceLockApplication = () => {
+    // 🧹 1. เคลียร์สถานะ Login ทั้งหมดออกจากหน่วยความจำเครื่องบราวเซอร์อย่างเด็ดขาด
     localStorage.removeItem('tallyLoginStatus');
     localStorage.removeItem('tallyLoginRole');
+    localStorage.removeItem('myTallyName'); 
+    localStorage.removeItem('pre_rename_hold');
 
+    // 🧹 2. รีเซ็ตตัวแปร State ในแรมให้กลับไปจุดเริ่มต้น (เพื่อล้างประวัติธุรกรรมค้าง)
+    state.currentRole = 'member';
+    state.currentMode = null;
+    state.transactions = [];
+
+    // 🧹 3. ดึงกล่อง Overlay ล็อกอินกลับขึ้นมาแสดงผลสวมทับหน้าจอปกติ
     document.getElementById('login-overlay').style.display = 'flex';
     document.getElementById('main-app').style.setProperty('display', 'none', 'important');
+    
+    // 🧹 4. ล้างตัวหนังสือที่ค้างอยู่ใน Input กล่องกรอกข้อมูลทุกชิ้นให้ว่างเปล่า
     document.getElementById('roomCodeInput').value = '';
     document.getElementById('adminPasswordInput').value = '';
+    
+    const nameInput = document.getElementById('userName');
+    if (nameInput) {
+        nameInput.value = '';
+        nameInput.disabled = false;
+    }
+    
+    // 🧹 5. สั่งปิดบานพับหน้าต่าง Log ประวัติที่อาจเปิดค้างอยู่
     window.closeDetachedLogView();
 };
 
@@ -141,11 +160,12 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
                 const lastEnteredRoom = document.getElementById('roomCodeInput').value;
                 if(lastEnteredRoom && lastEnteredRoom !== state.roomCode) {
                      window.forceLockApplication();
+                     return; // 🛑 หลุดออกจากฟังก์ชันทันทีเพื่อไม่ให้วิ่งลงไปสั่งออโต้ล็อกอินด้านล่าง
                 }
             }
         }
         
-        // ✨ ปรับปรุงจุดนี้: ดีดทุกคน (ทั้ง Member และ Admin) ทันทีเมื่อห้องโดน Reset
+        // ✨ ปรับปรุง: ดีดทุกคน (ทั้ง Member และ Admin) ออกจากระบบทันทีแบบล้างฟอร์มเคลียร์แคชสะอาด
         if(data.isResetting && document.getElementById('login-overlay').style.display === 'none') {
             window.showCustomAlert(
                 "icon-confirm", 
@@ -153,9 +173,11 @@ onValue(ref(db, 'systemConfig'), (snapshot) => {
                 "Admin ได้ทำการ Reset ห้องเรียบร้อยแล้ว! กรุณากรอกเลขห้องชุดใหม่เพื่อเข้าใช้งานในรอบถัดไป", 
                 () => { window.forceLockApplication(); }
             );
+            return; // 🛑 หลุดออกจากฟังก์ชันทันทีเพื่อไม่ให้วิ่งลงไปสั่งออโต้ล็อกอินด้านล่าง
         }
     }
     
+    // จะรันบรรทัดนี้ได้แปลว่าเปิดหน้าเว็บขึ้นมาแบบปกติ โดยไม่ได้มีคำสั่งดีด/รีเซ็ตใดๆ ค้างอยู่
     window.checkAutoLoginOnLoad();
 });
 
@@ -239,7 +261,7 @@ window.toggleNameState = () => {
             return nameInput.focus();
         }
 
-        // 🛡️ ปรับปรุงจุดนี้: ตรวจสอบสิทธิ์ชื่อซ้ำ / ดักเคสย้าย Browser
+        // 🛡️ ปรับปรุง: ตรวจสอบระบบชื่อซ้ำ หรือการดึง ID อุปกรณ์ของคนเก่ากลับมาคืนให้
         if (!window.syncDeviceWithExistingName(newName)) {
             return nameInput.focus(); 
         }
@@ -321,7 +343,7 @@ window.executeSaveEntry = (amount) => {
         return nameInput.focus();
     }
     
-    // 🛡️ ปรับปรุงจุดนี้: บล็อกกรณีที่ผู้ใช้พยายามพิมพ์ชื่อคนอื่นซ้ำแล้วกดปุ่มทำรายการทันที
+    // 🛡️ ปรับปรุง: บล็อกคนชื่อซ้ำที่แอบเนียนพิมพ์ชื่อคนอื่นแล้วกดกระโดดข้ามมาคลิกเบิก/คืนทันที
     if (!window.syncDeviceWithExistingName(currentInputValue)) {
         return nameInput.focus();
     }
@@ -343,34 +365,34 @@ window.executeSaveEntry = (amount) => {
     push(ref(db, 'transactions'), newTx); 
 };
 
-// 🛡️ ฟังก์ชันแก้วิกฤตเคลียร์เบราว์เซอร์ + บล็อกคนชื่อซ้ำในรอบปัจจุบัน
+// 🛡️ ฟังก์ชันแก้วิกฤตเคลียร์เบราว์เซอร์ + บล็อกคนชื่อซ้ำแบบมีตรรกะตรวจเช็คสิทธิ์ซ้อน
 window.syncDeviceWithExistingName = (inputName) => {
     if (!state.transactions || state.transactions.length === 0) return true;
 
     const currentLocalDeviceID = localStorage.getItem('myDeviceID');
     const cleanInputName = inputName.trim();
 
-    // ค้นหาธุรกรรมใน Firebase ที่ตรงกับชื่อที่ป้อนเข้ามา
+    // ค้นหาประวัติธุรกรรมในห้องปัจจุบันที่มีการใช้ชื่อตรงกับข้อความที่พิมพ์
     const existingTx = state.transactions.find(t => t.name && t.name.trim() === cleanInputName);
 
     if (existingTx) {
-        // เคส A: เป็นคนเดิม เบราว์เซอร์เดิม อุปกรณ์เดิม -> อนุญาต
+        // เคส A: เป็นคนเก่า บนเบราว์เซอร์เครื่องเดิม ไม่ติดปัญหา -> อนุญาตให้ผ่าน
         if (existingTx.deviceId === currentLocalDeviceID) {
             return true;
         }
         
-        // เคส B: มีชื่อนี้ใน Firebase อยู่แล้ว แต่ Device ID ในเครื่องไม่ตรงกัน
-        // ตรวจสอบว่าเบราว์เซอร์ตัวนี้เคยทำรายการอื่นไปแล้วหรือยังในรอบนี้
+        // เคส B: มีชื่อนี้ในฐานข้อมูลอยู่แล้ว แต่ตัวแอปในเบราว์เซอร์นี้ไม่มีประวัติสอดคล้อง
+        // ตรวจสอบเช็คดูว่า เบราว์เซอร์เครื่องนี้เคยลงทะเบียนสิทธิ์ใช้ชื่ออื่นไปแล้วหรือยังในรอบนี้
         const hasAnyHistoryInThisRound = state.transactions.some(t => t.deviceId === currentLocalDeviceID);
 
         if (!hasAnyHistoryInThisRound) {
-            // สันนิษฐานว่าเป็นคนเดิมที่เพิ่งล้างแคชมา หรือเปิดจากแอปอื่น (เช่น LINE) เพราะยังไม่มีประวัติในห้องเลย
-            // ทำการสวมรอยใช้ Device ID ตัวเก่าที่ติดมากับชื่อใน Firebase ทันที
+            // สันนิษฐานว่าเป็นคนเดิมที่เพิ่งล้างแคชมา หรือเปลี่ยนแอปสลับมาเปิดในไลน์ เพราะเบราว์เซอร์นี้ยังไม่มีประวัติในห้องเลย
+            // ระบบจะยินยอมดึงรหัสอุปกรณ์ตัวดั้งเดิมที่ติดอยู่กับชื่อใน Firebase กลับคืนเครื่องให้ทันที เพื่อรวมยอดกลับมาเป็นคนเดียวกัน
             localStorage.setItem('myDeviceID', existingTx.deviceId);
             console.log(`[Sync Device] พบประวัติเดิมของชื่อ "${cleanInputName}" ทำการผูกอุปกรณ์เข้ากับ ID เก่าสำเร็จ`);
             return true;
         } else {
-            // บล็อกทันที เพราะเบราว์เซอร์เครื่องนี้มีตัวตนอื่นอยู่แล้ว แต่อยู่ดีๆ จะมาตั้งชื่อซ้ำกับคนอื่น
+            // สั่งบล็อกทันที: เนื่องจากเบราว์เซอร์นี้มีสิทธิ์ชื่ออื่นใช้งานอยู่แล้ว แต่อยู่ดีๆ จะมาพิมพ์ชื่อซ้ำกับบุคคลอื่นในวง
             window.showCustomAlert(
                 "icon-error", 
                 "ชื่อซ้ำในระบบ", 
@@ -380,7 +402,7 @@ window.syncDeviceWithExistingName = (inputName) => {
         }
     }
 
-    return true; // ไม่มีชื่อซ้ำ ผ่านฉลุย
+    return true; // ไม่มีรายชื่อทับซ้อน ปล่อยผ่านฉลุย
 };
 
 // ==========================================
@@ -528,7 +550,7 @@ window.executeResetRoomActionComplete = () => {
     }
     const newCode = Math.floor(1000 + Math.random() * 9000).toString(); 
     
-    // ✨ ปรับปรุงจุดนี้: บันทึกเลขห้องใหม่ และปรับสถานะเป็น True เพื่อกระจายคำสั่งดีดทุกคนออกทันที
+    // ตั้งค่าตัวแปรเป็น true เพื่อดีดทุกคนออกพร้อมกันก่อน
     update(ref(db, 'systemConfig'), { roomCode: newCode, isResetting: true }).then(() => {
         setTimeout(() => {
             update(ref(db, 'systemConfig'), { isResetting: false });
